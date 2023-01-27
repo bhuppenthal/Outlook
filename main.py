@@ -5,7 +5,9 @@ from tktooltip import ToolTip
 
 class StartupWindow:
     def __init__(self, parent):
-        mainframe = ttk.Frame(root, padding='3 3 3 3')
+        self.parent = parent
+
+        mainframe = ttk.Frame(self.parent, padding='3 3 3 3')
 
         # new outlook button
         new_btn = ttk.Button(mainframe, text='New Outlook', command=self._open_outlook)
@@ -30,13 +32,15 @@ class StartupWindow:
         features_tpane.grid(column=1, row=3)
 
     def _open_outlook(self):
-        pass
+        OutlookWindow(self.parent)
 
 
 class OutlookWindow(tk.Toplevel):
     def __init__(self, parent):
-        self.super().__init__(self, parent)
-        pass
+        super().__init__(parent)
+
+        self.mainframe = ttk.Frame(self.parent, padding='3 3 3 3')
+        self.mainframe.grid(row=0, column=0)
 
 
 class TogglePane(ttk.Frame):
