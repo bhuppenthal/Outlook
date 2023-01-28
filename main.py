@@ -34,9 +34,9 @@ class StartupWindow:
         features_tpane.grid(column=1, row=3)
 
     def _open_outlook(self):
-        outlookWindow = OutlookWindow(self.parent)
-        outlookWindow.title('Edit an outlook')
-        outlookWindow.geometry('500x500')
+        outlook_window = OutlookWindow(self.parent)
+        outlook_window.title('Edit an outlook')
+        outlook_window.geometry('500x500')
 
 
 class OutlookWindow(tk.Toplevel):
@@ -58,6 +58,8 @@ class OutlookWindow(tk.Toplevel):
         self._years = tk.StringVar()
         self._years_etr = tk.Entry(self.mainframe, width=10, textvariable=self._years)
 
+        self._tutorial_btn = ttk.Button(self.mainframe, text='Open tutorial', command=self._open_tutorial)
+
         # grid time
         self.mainframe.grid(row=0, column=0)
         self._salary_lbl.grid(row=1, column=0, sticky='E')
@@ -66,6 +68,32 @@ class OutlookWindow(tk.Toplevel):
         self._rate_etr.grid(row=2, column=1)
         self._years_lbl.grid(row=3, column=0, sticky='E')
         self._years_etr.grid(row=3, column=1)
+        self._tutorial_btn.grid(row=4, column=0)
+
+    def _open_tutorial(self):
+        tutorial_window = TutorialWindow(self.parent)
+
+
+class TutorialWindow(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent = parent
+        self.title('Tutorial')
+        self.geometry('400x500')
+
+        # set up frames
+        self.mainframe = ttk.Frame(self, padding='3 3 3 3')
+
+        # set up widgets
+        self._time_lbl = ttk.Label(self.mainframe, text='Estimated time to complete: 15 minutes')
+        self._steps_lbl = ttk.Label(self.mainframe,
+                                    text='Step 1...\n' +
+                                         'Step 2...')
+
+        # set up grid
+        self.mainframe.grid(row=0, column=0)
+        self._time_lbl.grid(row=1, column=0, sticky='W')
+        self._steps_lbl.grid(row=2, column=0, sticky='W')
 
 
 class TogglePane(ttk.Frame):
