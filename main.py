@@ -3,6 +3,8 @@ from tkinter import ttk
 from tktooltip import ToolTip
 import numpy
 import matplotlib
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
 
 
 class StartupWindow:
@@ -47,18 +49,32 @@ class OutlookWindow(tk.Toplevel):
         # set up frames
         self.mainframe = ttk.Frame(self, padding='3 3 3 3')
 
+        # set up variables
+        # TODO: set up split logic for loading from a file
+        self._salary = tk.DoubleVar()
+        self._salary.set(70000.00)
+        self._rate = tk.DoubleVar()
+        self._rate.set(4.99)
+        self._years = tk.IntVar()
+        self._years.set(35)
+
+        # perform initial calculation
+        self._calculate()
+
         # set up widgets
         self._salary_lbl = ttk.Label(self.mainframe, text='Salary')
-        self._salary = tk.StringVar()
         self._salary_etr = tk.Entry(self.mainframe, width=10, textvariable=self._salary)
         self._rate_lbl = ttk.Label(self.mainframe, text='Savings Rate')
-        self._rate = tk.StringVar()
         self._rate_etr = tk.Entry(self.mainframe, width=10, textvariable=self._rate)
         self._years_lbl = ttk.Label(self.mainframe, text='Years to Retirement')
-        self._years = tk.StringVar()
         self._years_etr = tk.Entry(self.mainframe, width=10, textvariable=self._years)
-
         self._tutorial_btn = ttk.Button(self.mainframe, text='Open tutorial', command=self._open_tutorial)
+
+        self._figure = Figure(figsize=(5, 5), dpi=100)
+        self._plot = self._figure.add_subplot(111)
+        self._plot.plot(self._y)
+        self._canvas = FigureCanvasTkAgg(self._figure, master=self)
+        self._canvas.draw()
 
         # grid time
         self.mainframe.grid(row=0, column=0)
@@ -69,9 +85,13 @@ class OutlookWindow(tk.Toplevel):
         self._years_lbl.grid(row=3, column=0, sticky='E')
         self._years_etr.grid(row=3, column=1)
         self._tutorial_btn.grid(row=4, column=0)
+        self._canvas.get_tk_widget().grid(row=0, column=2, columnspan=3)
 
     def _open_tutorial(self):
         tutorial_window = TutorialWindow(self.parent)
+
+    def _calculate(self):
+        self._y = [i**2 for i in range(101)]
 
 
 class TutorialWindow(tk.Toplevel):
