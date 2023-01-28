@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 from tktooltip import ToolTip
+import numpy
+import matplotlib
 
 
 class StartupWindow:
@@ -32,15 +34,38 @@ class StartupWindow:
         features_tpane.grid(column=1, row=3)
 
     def _open_outlook(self):
-        OutlookWindow(self.parent)
+        outlookWindow = OutlookWindow(self.parent)
+        outlookWindow.title('Edit an outlook')
+        outlookWindow.geometry('500x500')
 
 
 class OutlookWindow(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
+        self.parent = parent
 
-        self.mainframe = ttk.Frame(self.parent, padding='3 3 3 3')
+        # set up frames
+        self.mainframe = ttk.Frame(self, padding='3 3 3 3')
+
+        # set up widgets
+        self._salary_lbl = ttk.Label(self.mainframe, text='Salary')
+        self._salary = tk.StringVar()
+        self._salary_etr = tk.Entry(self.mainframe, width=10, textvariable=self._salary)
+        self._rate_lbl = ttk.Label(self.mainframe, text='Savings Rate')
+        self._rate = tk.StringVar()
+        self._rate_etr = tk.Entry(self.mainframe, width=10, textvariable=self._rate)
+        self._years_lbl = ttk.Label(self.mainframe, text='Years to Retirement')
+        self._years = tk.StringVar()
+        self._years_etr = tk.Entry(self.mainframe, width=10, textvariable=self._years)
+
+        # grid time
         self.mainframe.grid(row=0, column=0)
+        self._salary_lbl.grid(row=1, column=0, sticky='E')
+        self._salary_etr.grid(row=1, column=1)
+        self._rate_lbl.grid(row=2, column=0, sticky='E')
+        self._rate_etr.grid(row=2, column=1)
+        self._years_lbl.grid(row=3, column=0, sticky='E')
+        self._years_etr.grid(row=3, column=1)
 
 
 class TogglePane(ttk.Frame):
