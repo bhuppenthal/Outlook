@@ -31,6 +31,30 @@ class RootWindow(tk.Tk):
     def open_load(self):
         self._load_window = LoadWindow(self)
 
+    def open_save(self):
+        self._load_window = SaveWindow(self)
+
+
+class SaveWindow(tk.Toplevel):
+    def __init__(self, master):
+        tk.Toplevel.__init__(self, master)
+        self.title('Save an outlook')
+        self.geometry('100x100')
+
+        self._mainframe = ttk.Frame(self, padding='15 15 15 15')
+
+        self._path = tk.StringVar()
+        self._path.set('C://')
+
+        self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
+        self._path_etr = tk.Entry(self._mainframe, width=15, textvariable=self._path)
+        self._save_btn = tk.Button(self._mainframe, text='Save')
+
+        self._mainframe.grid(row=0, column=0)
+        self._warn_lbl.grid(row=1, column=0, columnspan=2)
+        self._path_etr.grid(row=0, column=0)
+        self._save_btn.grid(row=0, column=1)
+
 
 class LoadWindow(tk.Toplevel):
     def __init__(self, parent):
@@ -105,6 +129,8 @@ class OutlookFrame(tk.Frame):
         self._years_lbl = ttk.Label(self, text='Years to Retirement')
         self._years_etr = tk.Entry(self, width=10, textvariable=self._years)
         self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=master.open_tutorial)
+        self._save_btn = ttk.Button(self, text='Save', command=master.open_save)
+        self._refresh_btn = ttk.Button(self, text='Refresh', command=self._refresh)
 
         self._figure = Figure(figsize=(5, 5), dpi=100)
         self._plot = self._figure.add_subplot(111)
@@ -113,17 +139,24 @@ class OutlookFrame(tk.Frame):
         self._canvas.draw()
 
         # grid time
-        self._salary_lbl.grid(row=1, column=0, sticky='E')
-        self._salary_etr.grid(row=1, column=1)
-        self._rate_lbl.grid(row=2, column=0, sticky='E')
-        self._rate_etr.grid(row=2, column=1)
-        self._years_lbl.grid(row=3, column=0, sticky='E')
-        self._years_etr.grid(row=3, column=1)
-        self._tutorial_btn.grid(row=4, column=0)
-        self._canvas.get_tk_widget().grid(row=0, column=2, columnspan=3)
+        self._salary_lbl.grid(row=0, column=0, sticky='E')
+        self._salary_etr.grid(row=0, column=1)
+        self._rate_lbl.grid(row=1, column=0, sticky='E')
+        self._rate_etr.grid(row=1, column=1)
+        self._years_lbl.grid(row=2, column=0, sticky='E')
+        self._years_etr.grid(row=2, column=1)
+        self._tutorial_btn.grid(row=3, column=0)
+        self._save_btn.grid(row=4, column=0)
+        self._refresh_btn.grid(row=4, column=1)
+        self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
 
     def _calculate(self):
         self._y = [i**2 for i in range(101)]
+
+    def _refresh(self):
+        self._salary.set(70000.00)
+        self._rate.set(4.99)
+        self._years.set(35)
 
 
 class TutorialWindow(tk.Toplevel):
