@@ -39,15 +39,17 @@ class SaveWindow(tk.Toplevel):
     def __init__(self, master):
         tk.Toplevel.__init__(self, master)
         self.title('Save an outlook')
-        self.geometry('100x100')
+        self.geometry('310x50')
 
-        self._mainframe = ttk.Frame(self, padding='15 15 15 15')
+        # set up frames
+        self._mainframe = ttk.Frame(self, padding='5 5 5 5')
 
         self._path = tk.StringVar()
-        self._path.set('C://')
+        self._path.set('C:/')
 
         self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
-        self._path_etr = tk.Entry(self._mainframe, width=15, textvariable=self._path)
+        self._path_etr = tk.Entry(self._mainframe, width=35, textvariable=self._path)
+        ToolTip(self._path_etr, msg='Enter the path to save the .out file', delay=0.5)
         self._save_btn = tk.Button(self._mainframe, text='Save')
 
         self._mainframe.grid(row=0, column=0)
@@ -60,17 +62,18 @@ class LoadWindow(tk.Toplevel):
     def __init__(self, parent):
         tk.Toplevel.__init__(self, parent)
         self.title('Load an outlook')
-        self.geometry('200x300')
+        self.geometry('310x50')
 
         # set up frames
-        self._mainframe = ttk.Frame(self, padding='3 3 3 3')
+        self._mainframe = ttk.Frame(self, padding='5 5 5 5')
 
         # set up variables
         self._path = tk.StringVar()
-        self._path.set('C://')
+        self._path.set('C:/')
 
         # set up widgets
-        self._path_etr = tk.Entry(self._mainframe, width=15, textvariable=self._path)
+        self._path_etr = tk.Entry(self._mainframe, width=35, textvariable=self._path)
+        ToolTip(self._path_etr, msg='Enter the path to the .out file', delay=0.5)
         self._open_btn = tk.Button(self._mainframe, text='Open')
 
         # set up grid
@@ -85,21 +88,24 @@ class StartupFrame(tk.Frame):
 
         # widgets
         new_btn = ttk.Button(self, text='New Outlook', command=lambda: parent.switch_frame(OutlookFrame))
-        ToolTip(new_btn, msg="Opens a new outlook for editing.", delay=0.5)
+        ToolTip(new_btn, msg="Opens a new outlook for editing", delay=0.5)
         load_btn = ttk.Button(self, text='Load Outlook', command=lambda: parent.open_load())
         ToolTip(load_btn, msg="Loads an existing outlook for editing", delay=0.5)
 
         # TODO: it seems this would be better sent as arguments to the toggle pane?
         features_tpane = TogglePane(self, label='Features')
-        features_details = 'We have implemented some cool new features...'
-        features_txt = tk.Text(features_tpane.frame, height=5, width=52)
+        features_details = 'Save Outlook: Allows you to save an outlook for\n   future editing.\n\n' \
+                           'Load Outlook: Loads a previous outlook editing.\n\n' \
+                           'Tool Tips: Hover over a button or field to learn\n  more about it.'
+        features_txt = tk.Text(features_tpane.frame, height=7, width=52)
         features_txt.grid(row=0, column=0)
         features_txt.insert(tk.END, features_details)
         features_txt.configure(state='disabled')
 
         self.grid(column=0, row=0)
-        self.grid_columnconfigure(0, minsize=200)
-        self.grid_columnconfigure(2, minsize=200)
+        self.grid_rowconfigure(2, minsize=50)
+        self.grid_rowconfigure(3, minsize=50)
+        self.grid_columnconfigure(1, minsize=500)
         new_btn.grid(column=1, row=1)
         load_btn.grid(column=1, row=2)
         features_tpane.grid(column=1, row=3)
@@ -124,13 +130,18 @@ class OutlookFrame(tk.Frame):
         # set up widgets
         self._salary_lbl = ttk.Label(self, text='Salary')
         self._salary_etr = tk.Entry(self, width=10, textvariable=self._salary)
+        ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
         self._rate_lbl = ttk.Label(self, text='Savings Rate')
         self._rate_etr = tk.Entry(self, width=10, textvariable=self._rate)
+        ToolTip(self._rate_etr, msg='Savings rate of salary', delay=0.5)
         self._years_lbl = ttk.Label(self, text='Years to Retirement')
         self._years_etr = tk.Entry(self, width=10, textvariable=self._years)
+        ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
         self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=master.open_tutorial)
         self._save_btn = ttk.Button(self, text='Save', command=master.open_save)
+        ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
         self._refresh_btn = ttk.Button(self, text='Refresh', command=self._refresh)
+        ToolTip(self._refresh_btn, msg='Resets all fields to their original values', delay=0.5)
 
         self._figure = Figure(figsize=(5, 5), dpi=100)
         self._plot = self._figure.add_subplot(111)
@@ -171,8 +182,22 @@ class TutorialWindow(tk.Toplevel):
         # set up widgets
         self._time_lbl = ttk.Label(self.mainframe, text='Estimated time to complete: 15 minutes')
         self._steps_lbl = ttk.Label(self.mainframe,
-                                    text='Step 1...\n' +
-                                         'Step 2...')
+                                    text='Step 1: Editing your salary\n'
+                                         'Double click the default salary in the text box to overwrite it with your'
+                                         ' salary.\n\n'
+                                         'Step 2: Editing your savings rate.\n'
+                                         'Double click the default salary in the text box to overwrite it with your'
+                                         ' expected savings rate.\n\n'
+                                         'Step 3: Edit your years to retirement.\n'
+                                         'Double click the default number in the text box and fill in your expected'
+                                         ' years to retirement.\n\n'
+                                         'Step 4: Saving an outlook\n'
+                                         'Clicking the save button will bring up a dialog box requesting a save'
+                                         ' location. Please enter your desired location and click on the Save button.'
+                                         '\n\n'
+                                         'Step 5: Refreshing an Outlook\n'
+                                         'Clicking this button will reset the outlook either to the default values or'
+                                         ' to the values in your saved Outlook.')
 
         # set up grid
         self.mainframe.grid(row=0, column=0)
@@ -198,8 +223,9 @@ class TogglePane(ttk.Frame):
         self._btn = ttk.Checkbutton(self, variable=self._open, command=self._activate, style='TButton')
 
         # grid time
-        self._lbl.grid(row=0, column=0, sticky='W')
-        self._btn.grid(row=0, column=1)
+        self.grid(row=0, column=0)
+        self._lbl.grid(row=0, column=0, sticky='E')
+        self._btn.grid(row=0, column=1, sticky='W')
 
         self._activate()
 
