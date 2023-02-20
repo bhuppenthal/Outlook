@@ -1,18 +1,27 @@
 import tkinter as tk
 from tkinter import ttk
 from tktooltip import ToolTip
-import numpy
-import matplotlib
+# import numpy
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 
 
 class RootWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
+        self.salary = tk.DoubleVar(master=self)
+        self.salary.set(70000.00)
+        self.salary.trace('w', self._debug_trace)
+        self.rate = tk.DoubleVar(master=self)
+        self.rate.set(4.99)
+        self.rate.trace('w', self._debug_trace)
+        self.years = tk.IntVar(master=self)
+        self.years.set(35)
+        self.years.trace('w', self._debug_trace)
+
         self.title('Outlook')
-        self._frame = StartupFrame(self)
+        self._frame = StartupFrame(self, {})
         self._tutorial_window = None
         self._load_window = None
 
@@ -20,7 +29,10 @@ class RootWindow(tk.Tk):
 
     def switch_frame(self, frame_class):
         print(f'received request to switch to {frame_class}')
-        new_frame = frame_class(self)
+        if frame_class is OutlookFrame:
+            new_frame = frame_class(self, [self.salary, self.rate, self.years])
+        else:
+            new_frame = frame_class
         self._frame.destroy()
         self._frame = new_frame
         self._frame.grid(row=0, column=0)
@@ -33,6 +45,9 @@ class RootWindow(tk.Tk):
 
     def open_save(self):
         self._load_window = SaveWindow(self)
+
+    def _debug_trace(self, *args):
+        print(f"salary: {self.salary.get()}, rate: {self.rate.get()}, years: {self.years.get()}")
 
 
 class SaveWindow(tk.Toplevel):
@@ -83,7 +98,7 @@ class LoadWindow(tk.Toplevel):
 
 
 class StartupFrame(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, args):
         tk.Frame.__init__(self, parent)
 
         # widgets
@@ -112,30 +127,25 @@ class StartupFrame(tk.Frame):
 
 
 class OutlookFrame(tk.Frame):
-    def __init__(self, master):
+    def __init__(self, master, args):
         tk.Frame.__init__(self, master)
 
-        # set up variables
-        # TODO: set up split logic for loading from a file
-        self._salary = tk.DoubleVar(master=self)
-        self._salary.set(70000.00)
-        self._rate = tk.DoubleVar(master=self)
-        self._rate.set(4.99)
-        self._years = tk.IntVar(master=self)
-        self._years.set(35)
+        self.salary = args[0]
+        self.rate = args[1]
+        self.years = args[2]
 
         # perform initial calculation
         self._calculate()
 
         # set up widgets
         self._salary_lbl = ttk.Label(self, text='Salary')
-        self._salary_etr = tk.Entry(self, width=10, textvariable=self._salary)
+        self._salary_etr = tk.Entry(self, width=10, textvariable=self.salary)
         ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
         self._rate_lbl = ttk.Label(self, text='Savings Rate')
-        self._rate_etr = tk.Entry(self, width=10, textvariable=self._rate)
+        self._rate_etr = tk.Entry(self, width=10, textvariable=self.rate)
         ToolTip(self._rate_etr, msg='Savings rate of salary', delay=0.5)
         self._years_lbl = ttk.Label(self, text='Years to Retirement')
-        self._years_etr = tk.Entry(self, width=10, textvariable=self._years)
+        self._years_etr = tk.Entry(self, width=10, textvariable=self.years)
         ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
         self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=master.open_tutorial)
         self._save_btn = ttk.Button(self, text='Save', command=master.open_save)
@@ -168,6 +178,7 @@ class OutlookFrame(tk.Frame):
         self._salary.set(70000.00)
         self._rate.set(4.99)
         self._years.set(35)
+
 
 
 class TutorialWindow(tk.Toplevel):
