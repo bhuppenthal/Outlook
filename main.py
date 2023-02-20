@@ -46,8 +46,13 @@ class RootWindow(tk.Tk):
     def open_save(self):
         self._load_window = SaveWindow(self)
 
+    def get_outlook(self):
+        return {'salary': self.salary.get(),
+                'rate': self.salary.get(),
+                'years': self.years.get()}
+
     def _debug_trace(self, *args):
-        print(f"salary: {self.salary.get()}, rate: {self.rate.get()}, years: {self.years.get()}")
+        print(f"salary: {self.salary.get()},rate: {self.rate.get()}, years: {self.years.get()}")
 
 
 class SaveWindow(tk.Toplevel):
@@ -65,12 +70,20 @@ class SaveWindow(tk.Toplevel):
         self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
         self._path_etr = tk.Entry(self._mainframe, width=35, textvariable=self._path)
         ToolTip(self._path_etr, msg='Enter the path to save the .out file', delay=0.5)
-        self._save_btn = tk.Button(self._mainframe, text='Save')
+        self._save_btn = tk.Button(self._mainframe, text='Save', command=self.save_outlook)
 
         self._mainframe.grid(row=0, column=0)
         self._warn_lbl.grid(row=1, column=0, columnspan=2)
         self._path_etr.grid(row=0, column=0)
         self._save_btn.grid(row=0, column=1)
+
+    def save_outlook(self):
+        # call master.get_outlook()
+        # add to a dictionary of path, method
+        save_dict = {'path': self._path.get(),
+                     'method': 'save',
+                     'data': self.master.get_outlook()}
+        print(f"save dictionary is {save_dict}")
 
 
 class LoadWindow(tk.Toplevel):
