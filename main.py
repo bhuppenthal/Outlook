@@ -4,6 +4,8 @@ from tktooltip import ToolTip
 # import numpy
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
+import json
+import socket
 
 
 class RootWindow(tk.Tk):
@@ -19,6 +21,7 @@ class RootWindow(tk.Tk):
         self.years = tk.IntVar(master=self)
         self.years.set(35)
         self.years.trace('w', self._debug_trace)
+        self.socket_manager = SocketManager()
 
         self.title('Outlook')
         self._frame = StartupFrame(self, {})
@@ -48,7 +51,7 @@ class RootWindow(tk.Tk):
 
     def get_outlook(self):
         return {'salary': self.salary.get(),
-                'rate': self.salary.get(),
+                'rate': self.rate.get(),
                 'years': self.years.get()}
 
     def _debug_trace(self, *args):
@@ -59,13 +62,13 @@ class SaveWindow(tk.Toplevel):
     def __init__(self, master):
         tk.Toplevel.__init__(self, master)
         self.title('Save an outlook')
-        self.geometry('310x50')
+        self.geometry('500x50')
 
         # set up frames
         self._mainframe = ttk.Frame(self, padding='5 5 5 5')
 
         self._path = tk.StringVar()
-        self._path.set('C:/')
+        self._path.set('/home/brenda/python_projects/cs361-outlook/')
 
         self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
         self._path_etr = tk.Entry(self._mainframe, width=35, textvariable=self._path)
@@ -81,9 +84,10 @@ class SaveWindow(tk.Toplevel):
         # call master.get_outlook()
         # add to a dictionary of path, method
         save_dict = {'path': self._path.get(),
-                     'method': 'save',
-                     'data': self.master.get_outlook()}
+                     'action': 'save',
+                     'info': self.master.get_outlook()}
         print(f"save dictionary is {save_dict}")
+        self.master.socket_manager.send_over_socket(save_dict)
 
 
 class LoadWindow(tk.Toplevel):
@@ -193,7 +197,6 @@ class OutlookFrame(tk.Frame):
         self._years.set(35)
 
 
-
 class TutorialWindow(tk.Toplevel):
     def __init__(self, master):
         tk.Toplevel.__init__(self, master)
@@ -261,6 +264,26 @@ class TogglePane(ttk.Frame):
         elif self._open.get():
             self.frame.grid(row=1, column=0, columnspan=2)
             self._btn.configure(text=self._expanded_text)
+
+
+class SocketManager():
+    def __init__(self):
+        self.HOST = "127.0.0.1"
+        self.PORT = 54290
+
+    def send_over_socket(self, data):
+        print(f"socket manager is sending: {data}")
+        data_json = json.dumps(data)
+
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect((self.HOST, self.PORT))
+            s.sendall(bytes(data_json, encoding="utf=8"))
+
+            response = s.recv(1024)
+            response = response.decode("utf=8")
+            response = json.loads(response)
+
+        print(f"socket manager received: {response}")
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ PORT = 54290
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.bind((HOST, PORT))
     s.listen()
+    print(f"server is on {HOST} and listening on {PORT}")
     while True:
         conn, addr = s.accept()
 
@@ -26,7 +27,7 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 if data["action"] == "save":
                     print("save file")
                     with open(data["path"], 'w') as info_file:
-                        info_file.write(data["info"])
+                        info_file.write(str(data["info"]) + "\n")
                     success_msg = {"status":"Success"}
                     success_msg_json = json.dumps(success_msg)
                     conn.sendall(bytes(success_msg_json, encoding="utf-8"))
