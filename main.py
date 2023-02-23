@@ -49,10 +49,30 @@ class RootWindow(tk.Tk):
     def open_save(self):
         self._load_window = SaveWindow(self)
 
+    def save_outlook(self, path):
+        save_dict = {'path': path,
+                     'action': 'save',
+                     'info': self.get_outlook()}
+        print(f"save dictionary is {save_dict}")
+        response = self.socket_manager.send_over_socket(save_dict)
+        print(f"response is: {response}")
+
+    def load_outlook(self, path):
+        load_dict = {'path': path,
+                     'action': 'load',
+                     'info': None}
+        print(f"load dictionary is {load_dict}")
+        # load does seem to be broken entirely due to the OS bad fd error
+        response = self.socket_manager.send_over_socket(load_dict)
+        print(f"response is: {response}")
+
     def get_outlook(self):
         return {'salary': self.salary.get(),
                 'rate': self.rate.get(),
                 'years': self.years.get()}
+
+    def set_outlook(self, load_dict):
+        ...
 
     def _debug_trace(self, *args):
         print(f"salary: {self.salary.get()},rate: {self.rate.get()}, years: {self.years.get()}")
@@ -71,7 +91,7 @@ class SaveWindow(tk.Toplevel):
         self._path.set('/home/brenda/python_projects/cs361-outlook/')
 
         self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
-        self._path_etr = tk.Entry(self._mainframe, width=35, textvariable=self._path)
+        self._path_etr = tk.Entry(self._mainframe, width=55, textvariable=self._path)
         ToolTip(self._path_etr, msg='Enter the path to save the .out file', delay=0.5)
         self._save_btn = tk.Button(self._mainframe, text='Save', command=self.save_outlook)
 
@@ -81,37 +101,36 @@ class SaveWindow(tk.Toplevel):
         self._save_btn.grid(row=0, column=1)
 
     def save_outlook(self):
-        # call master.get_outlook()
-        # add to a dictionary of path, method
-        save_dict = {'path': self._path.get(),
-                     'action': 'save',
-                     'info': self.master.get_outlook()}
-        print(f"save dictionary is {save_dict}")
-        self.master.socket_manager.send_over_socket(save_dict)
+        self.master.save_outlook(self._path.get())
+        self.destroy()
 
 
 class LoadWindow(tk.Toplevel):
     def __init__(self, parent):
         tk.Toplevel.__init__(self, parent)
         self.title('Load an outlook')
-        self.geometry('310x50')
+        self.geometry('500x50')
 
         # set up frames
         self._mainframe = ttk.Frame(self, padding='5 5 5 5')
 
         # set up variables
         self._path = tk.StringVar()
-        self._path.set('C:/')
+        self._path.set('/home/brenda/python_projects/cs361-outlook/')
 
         # set up widgets
-        self._path_etr = tk.Entry(self._mainframe, width=35, textvariable=self._path)
+        self._path_etr = tk.Entry(self._mainframe, width=55, textvariable=self._path)
         ToolTip(self._path_etr, msg='Enter the path to the .out file', delay=0.5)
-        self._open_btn = tk.Button(self._mainframe, text='Open')
+        self._open_btn = tk.Button(self._mainframe, text='Open', command=self.load_outlook)
 
         # set up grid
         self._mainframe.grid(row=0, column=0)
         self._path_etr.grid(row=0, column=0)
         self._open_btn.grid(row=0, column=1)
+
+    def load_outlook(self):
+        self.master.load_outlook(self._path.get())
+        self.destroy()
 
 
 class StartupFrame(tk.Frame):
@@ -284,6 +303,7 @@ class SocketManager():
         response = json.loads(response)
 
         print(f"socket manager received: {response}")
+        return response
 
 
 if __name__ == '__main__':
