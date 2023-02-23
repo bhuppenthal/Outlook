@@ -279,9 +279,9 @@ class SocketManager():
             s.connect((self.HOST, self.PORT))
             s.sendall(bytes(data_json, encoding="utf=8"))
 
-            response = s.recv(1024)
-            response = response.decode("utf=8")
-            response = json.loads(response)
+        response = s.recv(1024)
+        response = response.decode("utf=8")
+        response = json.loads(response)
 
         print(f"socket manager received: {response}")
 
