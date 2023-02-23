@@ -12,6 +12,7 @@ class RootWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
+        self.init_vals = {'salary': 70000, 'rate': 4.99, 'years': 35}
         self.salary = tk.DoubleVar(master=self)
         self.salary.set(70000.00)
         self.salary.trace('w', self._debug_trace)
@@ -64,7 +65,11 @@ class RootWindow(tk.Tk):
         print(f"load dictionary is {load_dict}")
         # load does seem to be broken entirely due to the OS bad fd error
         response = self.socket_manager.send_over_socket(load_dict)
-        print(f"response is: {response}")
+        self.init_vals = response['info']
+        self.salary.set(self.init_vals['salary'])
+        self.rate.set(self.init_vals['rate'])
+        self.years.set(self.init_vals['years'])
+        self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
         return {'salary': self.salary.get(),
@@ -303,6 +308,7 @@ class SocketManager():
             response = json.loads(response)
 
         print(f"socket manager received: {response}")
+        print(f"type is {type(response)}")
         return response
 
 
