@@ -32,11 +32,10 @@ class RootWindow(tk.Tk):
         self._frame.grid(row=0, column=0)
 
     def switch_frame(self, frame_class):
-        print(f'received request to switch to {frame_class}')
         if frame_class is OutlookFrame:
             new_frame = frame_class(self, [self.salary, self.rate, self.years])
         else:
-            new_frame = frame_class
+            new_frame = frame_class(self, [])
         self._frame.destroy()
         self._frame = new_frame
         self._frame.grid(row=0, column=0)
@@ -193,6 +192,7 @@ class OutlookFrame(tk.Frame):
         ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
         self._refresh_btn = ttk.Button(self, text='Refresh', command=self._refresh)
         ToolTip(self._refresh_btn, msg='Resets all fields to their original values', delay=0.5)
+        self._back_btn = ttk.Button(self, width=10, text='Back',command=lambda: master.switch_frame(StartupFrame))
 
         self._figure = Figure(figsize=(5, 5), dpi=100)
         self._plot = self._figure.add_subplot(111)
@@ -201,15 +201,16 @@ class OutlookFrame(tk.Frame):
         self._canvas.draw()
 
         # grid time
-        self._salary_lbl.grid(row=0, column=0, sticky='E')
-        self._salary_etr.grid(row=0, column=1)
-        self._rate_lbl.grid(row=1, column=0, sticky='E')
-        self._rate_etr.grid(row=1, column=1)
-        self._years_lbl.grid(row=2, column=0, sticky='E')
-        self._years_etr.grid(row=2, column=1)
-        self._tutorial_btn.grid(row=3, column=0)
-        self._save_btn.grid(row=4, column=0)
-        self._refresh_btn.grid(row=4, column=1)
+        self._back_btn.grid(row=0, column=0, sticky='E')
+        self._salary_lbl.grid(row=1, column=0, sticky='E')
+        self._salary_etr.grid(row=1, column=1)
+        self._rate_lbl.grid(row=2, column=0, sticky='E')
+        self._rate_etr.grid(row=2, column=1)
+        self._years_lbl.grid(row=3, column=0, sticky='E')
+        self._years_etr.grid(row=3, column=1)
+        self._tutorial_btn.grid(row=4, column=0)
+        self._save_btn.grid(row=5, column=0)
+        self._refresh_btn.grid(row=5, column=1)
         self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
 
     def _calculate(self):
