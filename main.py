@@ -15,13 +15,13 @@ class RootWindow(tk.Tk):
         self.init_vals = {'salary': 70000, 'rate': 4.99, 'years': 35}
         self.salary = tk.DoubleVar(master=self)
         self.salary.set(70000.00)
-        self.salary.trace('w', self._debug_trace)
+        self.salary.trace('w', self._trigger_render)
         self.rate = tk.DoubleVar(master=self)
         self.rate.set(4.99)
-        self.rate.trace('w', self._debug_trace)
+        self.rate.trace('w', self._trigger_render)
         self.years = tk.IntVar(master=self)
         self.years.set(35)
-        self.years.trace('w', self._debug_trace)
+        self.years.trace('w', self._trigger_render)
         self.socket_manager = SocketManager()
 
         self.title('Outlook')
@@ -77,6 +77,9 @@ class RootWindow(tk.Tk):
 
     def set_outlook(self, load_dict):
         ...
+
+    def _trigger_render(self, *args):
+        self._frame.render_graph()
 
     def _debug_trace(self, *args):
         print(f"salary: {self.salary.get()},rate: {self.rate.get()}, years: {self.years.get()}")
@@ -174,32 +177,30 @@ class OutlookFrame(tk.Frame):
         self.rate = args[1]
         self.years = args[2]
 
-        # perform initial calculation
-        self._calculate()
-
         # set up widgets
         self._salary_lbl = ttk.Label(self, text='Salary')
         self._salary_etr = tk.Entry(self, width=10, textvariable=self.salary)
         ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
+
         self._rate_lbl = ttk.Label(self, text='Savings Rate')
         self._rate_etr = tk.Entry(self, width=10, textvariable=self.rate)
         ToolTip(self._rate_etr, msg='Savings rate of salary', delay=0.5)
+
         self._years_lbl = ttk.Label(self, text='Years to Retirement')
         self._years_etr = tk.Entry(self, width=10, textvariable=self.years)
         ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
+
         self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=master.open_tutorial)
+
         self._save_btn = ttk.Button(self, text='Save', command=master.open_save)
         ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
+
         self._refresh_btn = ttk.Button(self, text='Refresh', command=self._refresh)
         ToolTip(self._refresh_btn, msg='Resets all fields to their original values', delay=0.5)
+
         self._back_btn = ttk.Button(self, width=10, text='Back',command=lambda: master.switch_frame(StartupFrame))
 
-        self._figure = Figure(figsize=(5, 5), dpi=100)
-        self._plot = self._figure.add_subplot(111)
-        self._plot.plot(self._y)
-        self._canvas = FigureCanvasTkAgg(self._figure, master=self)
-        self._canvas.draw()
-
+        self.render_graph()
         # grid time
         self._back_btn.grid(row=0, column=0, sticky='E')
         self._salary_lbl.grid(row=1, column=0, sticky='E')
@@ -213,8 +214,21 @@ class OutlookFrame(tk.Frame):
         self._refresh_btn.grid(row=5, column=1)
         self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
 
+    def render_graph(self):
+        print('render triggered')
+        self._calculate()
+        self._figure = Figure(figsize=(5, 5), dpi=100)
+        self._plot = self._figure.add_subplot(111)
+        self._plot.plot(self._y)
+        self._canvas = FigureCanvasTkAgg(self._figure, master=self)
+        self._canvas.draw()
+        self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
+
     def _calculate(self):
-        self._y = [i**2 for i in range(101)]
+        def savings(i):
+            return self.salary.get()*self.rate.get()/100*i
+        self._x = [i for i in range(0, self.years.get()+1)]
+        self._y = [savings(i) for i in self._x]
 
     def _refresh(self):
         self._salary.set(70000.00)
