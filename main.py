@@ -178,6 +178,7 @@ class OutlookFrame(tk.Frame):
         tk.Frame.__init__(self, master)
         self.graph_frame = ttk.Frame(self)
 
+        # could wrap these up as a variable dictionary to keep this a bit shorter. kind of a mess rn to add to
         self.salary = args[0]
         self.rate = args[1]
         self.years = args[2]
