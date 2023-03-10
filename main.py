@@ -2,27 +2,23 @@ import tkinter as tk
 from tkinter import ttk
 from tktooltip import ToolTip
 # import numpy
+import matplotlib
 from matplotlib.figure import Figure
+import matplotlib.pyplot as pltlib
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 import json
 import socket
+
+INIT_VALS = {'salary': 70000,
+             'rate': 4.99,
+             'years': 35}
 
 
 class RootWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
-        self.init_vals = {'salary': 70000, 'rate': 4.99, 'years': 35}
-        self.salary = tk.DoubleVar(master=self)
-        self.salary.set(70000.00)
-        self.salary.trace('w', self._trigger_render)
-        self.rate = tk.DoubleVar(master=self)
-        self.rate.set(4.99)
-        self.rate.trace('w', self._trigger_render)
-        self.years = tk.IntVar(master=self)
-        self.years.set(35)
-        self.years.trace('w', self._trigger_render)
-        self.socket_manager = SocketManager()
+        self.set_up_variables()
 
         self.title('Outlook')
         self._frame = StartupFrame(self, {})
@@ -31,9 +27,28 @@ class RootWindow(tk.Tk):
 
         self._frame.grid(row=0, column=0)
 
+    def set_up_variables(self):
+        self.default_act_vars = INIT_VALS
+        
+        self.act_vars = {'salary': tk.DoubleVar(master=self),
+                         'rate': tk.DoubleVar(master=self),
+                         'years': tk.IntVar(master=self)}
+        self.act_vars['salary'].set(INIT_VALS['salary'])
+        self.act_vars['salary'].trace('w', self._trigger_render)
+        self.act_vars['rate'].set(INIT_VALS['rate'])
+        self.act_vars['rate'].trace('w', self._trigger_render)
+        self.act_vars['years'].set(INIT_VALS['years'])
+        self.act_vars['years'].trace('w', self._trigger_render)
+        self.socket_manager = SocketManager()
+
+    def set_vars_default(self):
+        self.act_vars['salary'].set(self.default_act_vars['salary'])
+        self.act_vars['rate'].set(self.default_act_vars['rate'])
+        self.act_vars['years'].set(self.default_act_vars['years'])
+
     def switch_frame(self, frame_class):
         if frame_class is OutlookFrame:
-            new_frame = frame_class(self, [self.salary, self.rate, self.years])
+            new_frame = frame_class(self, self.act_vars)
         else:
             new_frame = frame_class(self, [])
         self._frame.destroy()
@@ -53,27 +68,25 @@ class RootWindow(tk.Tk):
         save_dict = {'path': path,
                      'action': 'save',
                      'info': self.get_outlook()}
-        print(f"save dictionary is {save_dict}")
         response = self.socket_manager.send_over_socket(save_dict)
-        print(f"response is: {response}")
 
     def load_outlook(self, path):
         load_dict = {'path': path,
                      'action': 'load',
                      'info': None}
-        print(f"load dictionary is {load_dict}")
-        # load does seem to be broken entirely due to the OS bad fd error
         response = self.socket_manager.send_over_socket(load_dict)
-        self.init_vals = response['info']
-        self.salary.set(self.init_vals['salary'])
-        self.rate.set(self.init_vals['rate'])
-        self.years.set(self.init_vals['years'])
+
+        self.default_act_vars = response['info']
+        self.act_vars['salary'].set(self.default_act_vars['salary'])
+        self.act_vars['rate'].set(self.default_act_vars['rate'])
+        self.act_vars['years'].set(self.default_act_vars['years'])
+
         self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
-        return {'salary': self.salary.get(),
-                'rate': self.rate.get(),
-                'years': self.years.get()}
+        return {'salary': self.act_vars['salary'].get(),
+                'rate': self.act_vars['rate'].get(),
+                'years': self.act_vars['years'].get()}
 
     def set_outlook(self, load_dict):
         ...
@@ -172,11 +185,21 @@ class StartupFrame(tk.Frame):
 class OutlookFrame(tk.Frame):
     def __init__(self, master, args):
         tk.Frame.__init__(self, master)
+        self.graph_frame = ttk.Frame(self)
 
-        self.salary = args[0]
-        self.rate = args[1]
-        self.years = args[2]
+        print(f"{args}")
 
+        self.salary = args['salary']
+        self.rate = args['rate']
+        self.years = args['years']
+
+        self.set_up_widgets()
+        # self.render_graph()
+        self.set_up_grid()
+
+    def set_up_widgets(self):
+        self._figure = None
+        self._canvas = None
         # set up widgets
         self._salary_lbl = ttk.Label(self, text='Salary')
         self._salary_etr = tk.Entry(self, width=10, textvariable=self.salary)
@@ -190,18 +213,18 @@ class OutlookFrame(tk.Frame):
         self._years_etr = tk.Entry(self, width=10, textvariable=self.years)
         ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
 
-        self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=master.open_tutorial)
+        self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=self.master.open_tutorial)
 
-        self._save_btn = ttk.Button(self, text='Save', command=master.open_save)
+        self._save_btn = ttk.Button(self, text='Save', command=self.master.open_save)
         ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
 
         self._refresh_btn = ttk.Button(self, text='Refresh', command=self._refresh)
         ToolTip(self._refresh_btn, msg='Resets all fields to their original values', delay=0.5)
 
-        self._back_btn = ttk.Button(self, width=10, text='Back',command=lambda: master.switch_frame(StartupFrame))
+        self._back_btn = ttk.Button(self, width=10, text='Back',command=lambda: self.master.switch_frame(StartupFrame))
+        ToolTip(self._back_btn, msg='Return to the opening page', delay=0.5)
 
-        self.render_graph()
-        # grid time
+    def set_up_grid(self):
         self._back_btn.grid(row=0, column=0, sticky='E')
         self._salary_lbl.grid(row=1, column=0, sticky='E')
         self._salary_etr.grid(row=1, column=1)
@@ -212,17 +235,26 @@ class OutlookFrame(tk.Frame):
         self._tutorial_btn.grid(row=4, column=0)
         self._save_btn.grid(row=5, column=0)
         self._refresh_btn.grid(row=5, column=1)
+        self.graph_frame.grid(row=0, column=2, rowspan=5)
+
+        # create the widget and stuff
+        self._calculate()
+        self._canvas = pltlib.figure(1)
+        self._figure = Figure(figsize=(5, 5), dpi=100)
+        self._figure_sub_plot = self._figure.add_subplot(111)
+        self._line1, = self._figure_sub_plot.plot(self._x, self._y, '-r')
+        self._canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(self._figure, master=self)
+        self._canvas.draw()
         self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
 
     def render_graph(self):
         print('render triggered')
         self._calculate()
-        self._figure = Figure(figsize=(5, 5), dpi=100)
-        self._plot = self._figure.add_subplot(111)
-        self._plot.plot(self._y)
-        self._canvas = FigureCanvasTkAgg(self._figure, master=self)
+        self._line1.set_data(self._x, self._y)
+        ax = self._canvas.figure.axes[0]
+        ax.set_xlim(0, self.years.get())
+        ax.set_ylim(0, max(self._y))
         self._canvas.draw()
-        self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
 
     def _calculate(self):
         def savings(i):
@@ -231,9 +263,11 @@ class OutlookFrame(tk.Frame):
         self._y = [savings(i) for i in self._x]
 
     def _refresh(self):
-        self._salary.set(70000.00)
-        self._rate.set(4.99)
-        self._years.set(35)
+        self.master.set_vars_default()
+        # instead of always setting to default, set to the object loaded or default
+        # self.salary.set(70000.00)
+        # self.rate.set(4.99)
+        # self.years.set(35)
 
 
 class TutorialWindow(tk.Toplevel):
