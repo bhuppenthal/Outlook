@@ -82,27 +82,13 @@ class RootWindow(tk.Tk):
         self._frame.grid(row=0, column=0)
 
     def set_up_variables(self):
-        # automatically set attributes!!
-        self.default_act_vars = INIT_VALS
+        def get_tk_var(self, char):
+            if char == 'i':
+                return tk.IntVar(master=self)
+            else:
+                return tk.DoubleVar(master=self)
 
-        self.act_vars = {'salary': tk.DoubleVar(master=self),
-                         'contribution': tk.DoubleVar(master=self),
-                         'increase': tk.DoubleVar(master=self),
-                         'years': tk.IntVar(master=self),
-                         'balance': tk.DoubleVar(master=self),
-                         'return_rate': tk.DoubleVar(master=self)}
-        self.act_vars['salary'].set(INIT_VALS['salary'])
-        self.act_vars['salary'].trace('w', self._trigger_render)
-        self.act_vars['contribution'].set(INIT_VALS['contribution'])
-        self.act_vars['contribution'].trace('w', self._trigger_render)
-        self.act_vars['increase'].set(INIT_VALS['increase'])
-        self.act_vars['increase'].trace('w', self._trigger_render)
-        self.act_vars['years'].set(INIT_VALS['years'])
-        self.act_vars['years'].trace('w', self._trigger_render)
-        self.act_vars['balance'].set(INIT_VALS['balance'])
-        self.act_vars['balance'].trace('w', self._trigger_render)
-        self.act_vars['return_rate'].set(INIT_VALS['return_rate'])
-        self.act_vars['return_rate'].trace('w', self._trigger_render)
+        self.act_vars = {var['name']: get_tk_var(self, var['type']) for var in ACT}
 
         self.socket_manager = SocketManager()
 
