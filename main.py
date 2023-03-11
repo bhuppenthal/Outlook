@@ -278,12 +278,12 @@ class OutlookFrame(tk.Frame):
             widgets['entry'].grid(row=2*i+1, column=0)
 
         self._back_btn.grid(row=0, column=0, sticky='NW')
-        self._tutorial_btn.grid(row=1, column=0, columnspan=2)
+        self._tutorial_btn.grid(row=1, column=0, columnspan=2, pady=10)
         self._save_btn.grid(row=2, column=0, padx=2, pady=5)
         self._refresh_btn.grid(row=2, column=1, padx=2, pady=5)
 
-        self.btn_frame.grid(row=0, column=0)
-        self.act_frame.grid(row=1, column=0)
+        self.btn_frame.grid(row=0, column=0, sticky='N')
+        self.act_frame.grid(row=1, column=0, sticky='N')
         self.graph_frame.grid(row=0, column=1, rowspan=2)
 
         self._calculate()
@@ -305,20 +305,20 @@ class OutlookFrame(tk.Frame):
 
     def _calculate(self):
         starting_salary = self.tk_vars['salary'].get()
-        contribution = self.tk_vars['contribution'].get()/100 + 1
+        contribution = self.tk_vars['contribution'].get()/100
         increase = self.tk_vars['increase'].get()/100 + 1
         years = self.tk_vars['years'].get()
         starting_balance = self.tk_vars['balance'].get()
         return_rate = self.tk_vars['return_rate'].get()/100 + 1
 
-        salary_at_year = [starting_salary]
-        balance_at_year = [starting_balance]
+        salary = [starting_salary]
+        balance = [starting_balance]
         for i in range(years):
-            salary_at_year.append(salary_at_year[i]*increase)
-            balance_at_year.append(balance_at_year[i]*return_rate + salary_at_year[i]*contribution)
+            salary.append(salary[i]*increase)
+            balance.append(balance[i]*return_rate + salary[i]*contribution)
 
         self._x = [i for i in range(years+1)]
-        self._y = balance_at_year
+        self._y = balance
 
     def _refresh(self):
         self.master.set_vars_default()
@@ -329,13 +329,14 @@ class TutorialWindow(tk.Toplevel):
     def __init__(self, master):
         tk.Toplevel.__init__(self, master)
         self.title('Tutorial')
-        self.geometry('400x500')
+        self.geometry('500x300')
 
         # set up frames
         self.mainframe = ttk.Frame(self, padding='3 3 3 3')
 
         # set up widgets
-        self._time_lbl = ttk.Label(self.mainframe, text='Estimated time to complete: 15 minutes')
+        self._time_lbl = ttk.Label(self.mainframe,
+                                   text='Estimated time to complete: 15 minutes')
         self._steps_lbl = ttk.Label(self.mainframe,
                                     text='Step 1: Editing your salary\n'
                                          'Double click the default salary in the text box to overwrite it with your'
@@ -346,13 +347,14 @@ class TutorialWindow(tk.Toplevel):
                                          'Step 3: Edit your years to retirement.\n'
                                          'Double click the default number in the text box and fill in your expected'
                                          ' years to retirement.\n\n'
-                                         'Step 4: Saving an outlook\n'
+                                         'Step 4: Saving an Outlook\n'
                                          'Clicking the save button will bring up a dialog box requesting a save'
                                          ' location. Please enter your desired location and click on the Save button.'
                                          '\n\n'
                                          'Step 5: Refreshing an Outlook\n'
                                          'Clicking this button will reset the outlook either to the default values or'
-                                         ' to the values in your saved Outlook.')
+                                         ' to the values in your saved Outlook.',
+                                         wraplength=500)
 
         # set up grid
         self.mainframe.grid(row=0, column=0)
