@@ -1,71 +1,52 @@
 import tkinter as tk
 from tkinter import ttk
 from tktooltip import ToolTip
-# import numpy
-import matplotlib
 from matplotlib.figure import Figure
 import matplotlib.pyplot as pltlib
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 import json
 import socket
-
-INIT_VALS = {'salary': 70000,
-             'contribution': 10,
-             'increase': 3,
-             'years': 35,
-             'balance': 20000,
-             'return_rate': 6.5}
+from configuration import ACT, TUTORIAL, FEATURES
 
 
 class RootWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
 
-        self.set_up_variables()
-
         self.title('Outlook')
+
+        self.set_up_frames()
+        self.set_up_variables()
+        self.set_up_grid()
+
+    def set_up_frames(self):
         self._frame = StartupFrame(self, {})
         self._tutorial_window = None
         self._load_window = None
 
-        self._frame.grid(row=0, column=0)
-
     def set_up_variables(self):
-        # automatically set attributes!!
-        self.default_act_vars = INIT_VALS
+        """Set up the root window variables and open the socket."""
 
-        self.act_vars = {'salary': tk.DoubleVar(master=self),
-                         'contribution': tk.DoubleVar(master=self),
-                         'increase': tk.DoubleVar(master=self),
-                         'years': tk.IntVar(master=self),
-                         'balance': tk.DoubleVar(master=self),
-                         'return_rate': tk.DoubleVar(master=self)}
-        self.act_vars['salary'].set(INIT_VALS['salary'])
-        self.act_vars['salary'].trace('w', self._trigger_render)
-        self.act_vars['contribution'].set(INIT_VALS['contribution'])
-        self.act_vars['contribution'].trace('w', self._trigger_render)
-        self.act_vars['increase'].set(INIT_VALS['increase'])
-        self.act_vars['increase'].trace('w', self._trigger_render)
-        self.act_vars['years'].set(INIT_VALS['years'])
-        self.act_vars['years'].trace('w', self._trigger_render)
-        self.act_vars['balance'].set(INIT_VALS['balance'])
-        self.act_vars['balance'].trace('w', self._trigger_render)
-        self.act_vars['return_rate'].set(INIT_VALS['return_rate'])
-        self.act_vars['return_rate'].trace('w', self._trigger_render)
+        def tk_var(self, act_v):
+            if act_v['type'] == 'i':
+                var = tk.IntVar(master=self)
+            else:
+                var = tk.DoubleVar(master=self)
+            var.set(act_v['init_val'])
+            var.trace('w', self._trigger_render)
+            return var
 
+        self.tk_vars = {var['name']: tk_var(self, var) for var in ACT}
+        self.default_vals = {var['name']: var['init_val'] for var in ACT}
         self.socket_manager = SocketManager()
 
-    def set_vars_default(self):
-        self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
-        self.act_vars['increase'].set(self.default_act_vars['increase'])
-        self.act_vars['years'].set(self.default_act_vars['years'])
-        self.act_vars['balance'].set(self.default_act_vars['balance'])
-        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
+    def set_up_grid(self):
+        self._frame.grid(row=0, column=0)
 
     def switch_frame(self, frame_class):
+        """Change the displayed frame to the parameter frame_class."""
         if frame_class is OutlookFrame:
-            new_frame = frame_class(self, self.act_vars)
+            new_frame = frame_class(self, self.tk_vars)
         else:
             new_frame = frame_class(self, [])
         self._frame.destroy()
@@ -92,33 +73,19 @@ class RootWindow(tk.Tk):
                      'action': 'load',
                      'info': None}
         response = self.socket_manager.send_over_socket(load_dict)
-
-        self.default_act_vars = response['info']
-        self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
-        self.act_vars['increase'].set(self.default_act_vars['increase'])
-        self.act_vars['years'].set(self.default_act_vars['years'])
-        self.act_vars['balance'].set(self.default_act_vars['balance'])
-        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
-
+        self.default_vals = {k: v for k, v in response['info'].items()}
+        self.set_vars_default()
         self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
-        return {'salary': self.act_vars['salary'].get(),
-                'contribution': self.act_vars['contribution'].get(),
-                'increase': self.act_vars['increase'].get(),
-                'years': self.act_vars['years'].get(),
-                'balance': self.act_vars['balance'].get(),
-                'return_rate': self.act_vars['return_rate'].get()}
-
-    def set_outlook(self, load_dict):
-        ...
+        return {k: v.get() for k, v in self.tk_vars.items()}
 
     def _trigger_render(self, *args):
         self._frame.render_graph()
 
-    def _debug_trace(self, *args):
-        print(f"salary: {self.salary.get()},rate: {self.rate.get()}, years: {self.years.get()}")
+    def set_vars_default(self):
+        for key in self.tk_vars:
+            self.tk_vars[key].set(self.default_vals[key])
 
 
 class SaveWindow(tk.Toplevel):
@@ -127,17 +94,25 @@ class SaveWindow(tk.Toplevel):
         self.title('Save an outlook')
         self.geometry('500x50')
 
-        # set up frames
+        self.set_up_frames()
+        self.set_up_variables()
+        self.set_up_widgets()
+        self.set_up_grid()
+
+    def set_up_frames(self):
         self._mainframe = ttk.Frame(self, padding='5 5 5 5')
 
+    def set_up_variables(self):
         self._path = tk.StringVar()
         self._path.set('/home/brenda/python_projects/cs361-outlook/')
 
+    def set_up_widgets(self):
         self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
         self._path_etr = tk.Entry(self._mainframe, width=55, textvariable=self._path)
         ToolTip(self._path_etr, msg='Enter the path to save the .out file', delay=0.5)
         self._save_btn = tk.Button(self._mainframe, text='Save', command=self.save_outlook)
 
+    def set_up_grid(self):
         self._mainframe.grid(row=0, column=0)
         self._warn_lbl.grid(row=1, column=0, columnspan=2)
         self._path_etr.grid(row=0, column=0)
@@ -154,19 +129,24 @@ class LoadWindow(tk.Toplevel):
         self.title('Load an outlook')
         self.geometry('500x50')
 
-        # set up frames
+        self.set_up_frames()
+        self.set_up_variables()
+        self.set_up_widgets()
+        self.set_up_grid()
+
+    def set_up_frames(self):
         self._mainframe = ttk.Frame(self, padding='5 5 5 5')
 
-        # set up variables
+    def set_up_variables(self):
         self._path = tk.StringVar()
         self._path.set('/home/brenda/python_projects/cs361-outlook/')
 
-        # set up widgets
+    def set_up_widgets(self):
         self._path_etr = tk.Entry(self._mainframe, width=55, textvariable=self._path)
         ToolTip(self._path_etr, msg='Enter the path to the .out file', delay=0.5)
         self._open_btn = tk.Button(self._mainframe, text='Open', command=self.load_outlook)
 
-        # set up grid
+    def set_up_grid(self):
         self._mainframe.grid(row=0, column=0)
         self._path_etr.grid(row=0, column=0)
         self._open_btn.grid(row=0, column=1)
@@ -177,116 +157,123 @@ class LoadWindow(tk.Toplevel):
 
 
 class StartupFrame(tk.Frame):
-    def __init__(self, parent, args):
-        tk.Frame.__init__(self, parent)
-
-        # widgets
-        new_btn = ttk.Button(self, text='New Outlook', command=lambda: parent.switch_frame(OutlookFrame))
-        ToolTip(new_btn, msg="Opens a new outlook for editing", delay=0.5)
-        load_btn = ttk.Button(self, text='Load Outlook', command=lambda: parent.open_load())
-        ToolTip(load_btn, msg="Loads an existing outlook for editing", delay=0.5)
-
-        # TODO: it seems this would be better sent as arguments to the toggle pane?
-        features_tpane = TogglePane(self, label='Features')
-        features_details = 'Save Outlook: Allows you to save an outlook for\n   future editing.\n\n' \
-                           'Load Outlook: Loads a previous outlook editing.\n\n' \
-                           'Tool Tips: Hover over a button or field to learn\n  more about it.'
-        features_txt = tk.Text(features_tpane.frame, height=7, width=52)
-        features_txt.grid(row=0, column=0)
-        features_txt.insert(tk.END, features_details)
-        features_txt.configure(state='disabled')
-
-        self.grid(column=0, row=0)
-        self.grid_rowconfigure(2, minsize=50)
-        self.grid_rowconfigure(3, minsize=50)
-        self.grid_columnconfigure(1, minsize=500)
-        new_btn.grid(column=1, row=1)
-        load_btn.grid(column=1, row=2)
-        features_tpane.grid(column=1, row=3)
-
-
-class OutlookFrame(tk.Frame):
     def __init__(self, master, args):
         tk.Frame.__init__(self, master)
-        self.btn_frame = ttk.Frame(self, padding="5 5 5 5")
-        self.act_frame = ttk.Frame(self, padding="5 5 5 5")
-        self.graph_frame = ttk.Frame(self)
-
-        self.salary = args['salary']
-        self.contribution = args['contribution']
-        self.increase = args['increase']
-        self.years = args['years']
-        self.balance = args['balance']
-        self.return_rate = args['return_rate']
 
         self.set_up_widgets()
         self.set_up_grid()
 
     def set_up_widgets(self):
-        self._figure = None
-        self._canvas = None
-        # set up widgets
-        self._salary_lbl = ttk.Label(self.act_frame , text='Salary')
-        self._salary_etr = tk.Entry(self.act_frame , width=10, textvariable=self.salary)
-        ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
+        self.new_btn = ttk.Button(self,
+                                  text='New Outlook',
+                                  command=lambda: self.master.switch_frame(OutlookFrame))
+        ToolTip(self.new_btn,
+                msg="Opens a new outlook for editing", delay=0.5)
 
-        self._contribution_lbl = ttk.Label(self.act_frame , text='Contribution Rate')
-        self._contribution_etr = tk.Entry(self.act_frame , width=10, textvariable=self.contribution)
-        ToolTip(self._contribution_etr, msg='Contribution rate of salary', delay=0.5)
+        self.load_btn = ttk.Button(self,
+                                   text='Load Outlook',
+                                   command=lambda: self.master.open_load())
+        ToolTip(self.load_btn,
+                msg="Loads an existing outlook for editing", delay=0.5)
 
-        self._increase_lbl = ttk.Label(self.act_frame , text='Annual Salary Increase')
-        self._increase_etr = tk.Entry(self.act_frame , width=10, textvariable=self.increase)
-        ToolTip(self._increase_etr, msg='Estimated increase of salary annually', delay=0.5)
+        self.features_tpane = TogglePane(self, label='Features')
 
-        self._years_lbl = ttk.Label(self.act_frame , text='Years to Retirement')
-        self._years_etr = tk.Entry(self.act_frame , width=10, textvariable=self.years)
-        ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
-
-        self._balance_lbl = ttk.Label(self.act_frame , text='Balance')
-        self._balance_etr = tk.Entry(self.act_frame , width=10, textvariable=self.balance)
-        ToolTip(self._balance_etr, msg='Current balance', delay=0.5)
-
-        self._return_lbl = ttk.Label(self.act_frame , text='Expected Rate of Return')
-        self._return_etr = tk.Entry(self.act_frame , width=10, textvariable=self.return_rate)
-        ToolTip(self._return_etr, msg='Expected rate of return', delay=0.5)
-
-        self._tutorial_btn = ttk.Button(self.btn_frame , text='Open tutorial', command=self.master.open_tutorial)
-
-        self._save_btn = ttk.Button(self.btn_frame , text='Save', command=self.master.open_save)
-        ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
-
-        self._refresh_btn = ttk.Button(self.btn_frame , text='Refresh', command=self._refresh)
-        ToolTip(self._refresh_btn, msg='Resets all fields to their original values', delay=0.5)
-
-        self._back_btn = ttk.Button(self.btn_frame , width=10, text='Back',command=lambda: self.master.switch_frame(StartupFrame))
-        ToolTip(self._back_btn, msg='Return to the opening page', delay=0.5)
+        self.features_details = FEATURES
+        self.features_txt = tk.Text(self.features_tpane.frame,
+                                    height=7,
+                                    width=52)
+        self.features_txt.insert(tk.END, self.features_details)
+        self.features_txt.configure(state='disabled')
 
     def set_up_grid(self):
-        self._salary_lbl.grid(row=1, column=0, sticky='W')
-        self._salary_etr.grid(row=2, column=0)
-        self._contribution_lbl.grid(row=3, column=0, sticky='W')
-        self._contribution_etr.grid(row=4, column=0)
-        self._increase_lbl.grid(row=5, column=0, sticky='W')
-        self._increase_etr.grid(row=6, column=0)
-        self._years_lbl.grid(row=7, column=0, sticky='W')
-        self._years_etr.grid(row=8, column=0)
-        self._balance_lbl.grid(row=9, column=0, sticky='W')
-        self._balance_etr.grid(row=10, column=0)
-        self._return_lbl.grid(row=11, column=0, sticky='W')
-        self._return_etr.grid(row=12, column=0)
+        self.grid(column=0, row=0)
+        self.grid_rowconfigure(2, minsize=50)
+        self.grid_rowconfigure(3, minsize=50)
+        self.grid_columnconfigure(1, minsize=500)
 
-        self._back_btn.grid(row=0, column=0, sticky='NW', pady=10)
-        self._tutorial_btn.grid(row=1, column=0, columnspan=2)
+        self.features_txt.grid(row=0, column=0)
+        self.new_btn.grid(column=1, row=1)
+        self.load_btn.grid(column=1, row=2)
+        self.features_tpane.grid(column=1, row=3)
+
+
+class OutlookFrame(tk.Frame):
+    def __init__(self, master, args):
+        tk.Frame.__init__(self, master)
+
+        self.tk_vars = args
+        self.set_up_frames()
+        self.set_up_widgets()
+        self.set_up_grid()
+
+    def set_up_frames(self):
+        self.btn_frame = ttk.Frame(self, padding="5 5 5 5")
+        self.act_frame = ttk.Frame(self, padding="5 5 5 5")
+        self.graph_frame = ttk.Frame(self)
+
+    def set_up_widgets(self):
+        self._figure = None
+        self._canvas = None
+        self.act_widgets()
+        self.button_widgets()
+
+    def act_widgets(self):
+        def new_widgets(self, act_dict):
+            label = ttk.Label(self.act_frame, text=act_dict['text_lbl'])
+            entry = tk.Entry(self.act_frame,
+                             width=act_dict['width'],
+                             textvariable=self.tk_vars[act_dict['name']])
+            ToolTip(entry, msg=act_dict['text_tip'], delay=0.5)
+            return {'label': label, 'entry': entry}
+
+        self._act_widgets = [new_widgets(self, act_dict) for act_dict in ACT]
+
+    def button_widgets(self):
+        self._tutorial_btn = ttk.Button(self.btn_frame,
+                                        text='Open tutorial',
+                                        command=self.master.open_tutorial)
+        
+        self._save_btn = ttk.Button(self.btn_frame,
+                                    text='Save',
+                                    command=self.master.open_save)
+        ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
+
+        self._refresh_btn = ttk.Button(self.btn_frame,
+                                       text='Refresh',
+                                       command=self._refresh)
+        ToolTip(self._refresh_btn,
+                msg='Resets all fields to their original values', delay=0.5)
+
+        self._back_btn = ttk.Button(self.btn_frame,
+                                    width=10,
+                                    text='Back',
+                                    command=lambda:
+                                        self.master.switch_frame(StartupFrame))
+        ToolTip(self._back_btn,
+                msg='Return to the opening page', delay=0.5)
+
+    def set_up_grid(self):
+        self.grid_act_widgets()
+        self.grid_buttons()
+        self.grid_graph()
+
+    def grid_act_widgets(self):
+        for i in range(0, len(self._act_widgets)):
+            widgets = self._act_widgets[i]
+            widgets['label'].grid(row=2*i, column=0, sticky='W')
+            widgets['entry'].grid(row=2*i+1, column=0)
+
+    def grid_buttons(self):
+        self._back_btn.grid(row=0, column=0, sticky='NW')
+        self._tutorial_btn.grid(row=1, column=0, columnspan=2, pady=10)
         self._save_btn.grid(row=2, column=0, padx=2, pady=5)
         self._refresh_btn.grid(row=2, column=1, padx=2, pady=5)
 
-        self.btn_frame.grid(row=0, column=0)
-        self.act_frame.grid(row=1, column=0)
-        self.act_frame.rowconfigure(0, minsize=100)
-        self.act_frame.rowconfigure(13, minsize=100)
+        self.btn_frame.grid(row=0, column=0, sticky='N')
+        self.act_frame.grid(row=1, column=0, sticky='N')
         self.graph_frame.grid(row=0, column=1, rowspan=2)
 
-        # create the widget and stuff
+    def grid_graph(self):
         self._calculate()
         self._canvas = pltlib.figure(1)
         self._figure = Figure(figsize=(5, 5), dpi=100)
@@ -300,26 +287,26 @@ class OutlookFrame(tk.Frame):
         self._calculate()
         self._line1.set_data(self._x, self._y)
         ax = self._canvas.figure.axes[0]
-        ax.set_xlim(0, self.years.get()+1)
-        ax.set_ylim(0, max(self._y)*1.1)
+        ax.set_xlim(0, max(self._x)+1)
+        ax.set_ylim(0, max(self._y)*1.05)
         self._canvas.draw()
 
     def _calculate(self):
-        starting_salary = self.salary.get()
-        contribution = self.contribution.get()/100 + 1
-        increase = self.increase.get()/100 + 1
-        years = self.years.get()
-        starting_balance = self.balance.get()
-        return_rate = self.return_rate.get()/100 + 1
+        starting_salary = self.tk_vars['salary'].get()
+        contribution = self.tk_vars['contribution'].get()/100
+        increase = self.tk_vars['increase'].get()/100 + 1
+        years = self.tk_vars['years'].get()
+        starting_balance = self.tk_vars['balance'].get()
+        return_rate = self.tk_vars['return_rate'].get()/100 + 1
 
-        salary_at_year = [starting_salary]
-        balance_at_year = [starting_balance]
+        salary = [starting_salary]
+        balance = [starting_balance]
         for i in range(years):
-            salary_at_year.append(salary_at_year[i]*increase)
-            balance_at_year.append(balance_at_year[i]*return_rate + salary_at_year[i]*contribution)
+            salary.append(salary[i]*increase)
+            balance.append(balance[i]*return_rate + salary[i]*contribution)
 
         self._x = [i for i in range(years+1)]
-        self._y = balance_at_year
+        self._y = balance
 
     def _refresh(self):
         self.master.set_vars_default()
@@ -330,63 +317,57 @@ class TutorialWindow(tk.Toplevel):
     def __init__(self, master):
         tk.Toplevel.__init__(self, master)
         self.title('Tutorial')
-        self.geometry('400x500')
+        self.geometry('500x300')
 
-        # set up frames
         self.mainframe = ttk.Frame(self, padding='3 3 3 3')
+        self.set_up_widgets()
+        self.set_up_grid()
 
-        # set up widgets
-        self._time_lbl = ttk.Label(self.mainframe, text='Estimated time to complete: 15 minutes')
+    def set_up_widgets(self):
+        self._time_lbl = ttk.Label(self.mainframe,
+                                   text='Estimated time to complete: 15 mins')
         self._steps_lbl = ttk.Label(self.mainframe,
-                                    text='Step 1: Editing your salary\n'
-                                         'Double click the default salary in the text box to overwrite it with your'
-                                         ' salary.\n\n'
-                                         'Step 2: Editing your savings rate.\n'
-                                         'Double click the default salary in the text box to overwrite it with your'
-                                         ' expected savings rate.\n\n'
-                                         'Step 3: Edit your years to retirement.\n'
-                                         'Double click the default number in the text box and fill in your expected'
-                                         ' years to retirement.\n\n'
-                                         'Step 4: Saving an outlook\n'
-                                         'Clicking the save button will bring up a dialog box requesting a save'
-                                         ' location. Please enter your desired location and click on the Save button.'
-                                         '\n\n'
-                                         'Step 5: Refreshing an Outlook\n'
-                                         'Clicking this button will reset the outlook either to the default values or'
-                                         ' to the values in your saved Outlook.')
+                                    text=TUTORIAL,
+                                    wraplength=500)
 
-        # set up grid
+    def set_up_grid(self):
         self.mainframe.grid(row=0, column=0)
         self._time_lbl.grid(row=1, column=0, sticky='W')
         self._steps_lbl.grid(row=2, column=0, sticky='W')
 
 
 class TogglePane(ttk.Frame):
-    def __init__(self, parent, label, expanded_text='-', collapsed_text='+'):
-        ttk.Frame.__init__(self, parent)
+    def __init__(self, master, label, expanded_text='-', collapsed_text='+'):
+        ttk.Frame.__init__(self, master)
 
-        self.parent = parent
-        self.frame = ttk.Frame(self, borderwidth=2, relief='sunken')
         self._label = label
         self._expanded_text = expanded_text
         self._collapsed_text = collapsed_text
 
-        # make a label
+        self.set_up_frames()
+        self.set_up_widgets()
+        self.set_up_grid()
+
+        self._activate()
+
+    def set_up_frames(self):
+        self.frame = ttk.Frame(self, borderwidth=2, relief='sunken')
+
+    def set_up_widgets(self):
         self._lbl = ttk.Label(self, text=self._label)
 
-        # make the button and tie it to a boolean
         self._open = tk.BooleanVar()
-        self._btn = ttk.Checkbutton(self, variable=self._open, command=self._activate, style='TButton')
+        self._btn = ttk.Checkbutton(self,
+                                    variable=self._open,
+                                    command=self._activate,
+                                    style='TButton')
 
-        # grid time
+    def set_up_grid(self):
         self.grid(row=0, column=0)
         self._lbl.grid(row=0, column=0, sticky='E')
         self._btn.grid(row=0, column=1, sticky='W')
 
-        self._activate()
-
     def _activate(self):
-        print(f'activate: self._open is {self._open.get()}')
         if not self._open.get():
             self.frame.grid_forget()
             self._btn.configure(text=self._collapsed_text)
