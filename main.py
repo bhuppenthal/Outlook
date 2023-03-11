@@ -16,6 +16,57 @@ INIT_VALS = {'salary': 70000,
              'balance': 20000,
              'return_rate': 6.5}
 
+ACT = [
+    {
+        'name': 'salary',
+        'init_value': 70000,
+        'type': 'd',
+        'text_lbl': 'Salary',
+        'text_tip': 'Current yearly salary',
+        'width': 10
+    },
+    {
+        'name': 'contribution',
+        'init_value': '10',
+        'type': 'd',
+        'text_lbl': 'Contribution Rate',
+        'text_tip': 'Contribution rate of salary',
+        'width': 10
+    },
+    {
+        'name': 'increase',
+        'init_value': '2',
+        'type': 'd',
+        'text_lbl': 'Annual Raise',
+        'text_tip': 'Estimated rate of salary increase annually',
+        'width': '10'
+    },
+    {
+        'name': 'years',
+        'init_value': 25,
+        'type': 'i',
+        'text_lbl': 'Years to Retirement',
+        'text_tip': 'Estimated number of years to retirement',
+        'width': 10
+    },
+    {
+        'name': 'balance',
+        'init_value': '25000',
+        'type': 'd',
+        'text_lbl': 'Currentl Balance',
+        'text_tip': 'Current 401k balance',
+        'width': 10
+    },
+    {
+        'name': 'return_rate',
+        'init_value': '6.5',
+        'type': 'd',
+        'text_lbl': 'Return Rate',
+        'text_tip': 'Expected Rate of Return',
+        'width': 10
+    }
+]
+
 
 class RootWindow(tk.Tk):
     def __init__(self, *args, **kwargs):
