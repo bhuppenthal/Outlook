@@ -10,8 +10,11 @@ import json
 import socket
 
 INIT_VALS = {'salary': 70000,
-             'rate': 4.99,
-             'years': 35}
+             'contribution': 10,
+             'increase': 3,
+             'years': 35,
+             'balance': 20000,
+             'return_rate': 6.5}
 
 
 class RootWindow(tk.Tk):
@@ -28,23 +31,37 @@ class RootWindow(tk.Tk):
         self._frame.grid(row=0, column=0)
 
     def set_up_variables(self):
+        # automatically set attributes!!
         self.default_act_vars = INIT_VALS
-        
+
         self.act_vars = {'salary': tk.DoubleVar(master=self),
-                         'rate': tk.DoubleVar(master=self),
-                         'years': tk.IntVar(master=self)}
+                         'contribution': tk.DoubleVar(master=self),
+                         'increase': tk.DoubleVar(master=self),
+                         'years': tk.IntVar(master=self),
+                         'balance': tk.DoubleVar(master=self),
+                         'return_rate': tk.DoubleVar(master=self)}
         self.act_vars['salary'].set(INIT_VALS['salary'])
         self.act_vars['salary'].trace('w', self._trigger_render)
-        self.act_vars['rate'].set(INIT_VALS['rate'])
-        self.act_vars['rate'].trace('w', self._trigger_render)
+        self.act_vars['contribution'].set(INIT_VALS['contribution'])
+        self.act_vars['contribution'].trace('w', self._trigger_render)
+        self.act_vars['increase'].set(INIT_VALS['increase'])
+        self.act_vars['increase'].trace('w', self._trigger_render)
         self.act_vars['years'].set(INIT_VALS['years'])
         self.act_vars['years'].trace('w', self._trigger_render)
+        self.act_vars['balance'].set(INIT_VALS['balance'])
+        self.act_vars['balance'].trace('w', self._trigger_render)
+        self.act_vars['return_rate'].set(INIT_VALS['return_rate'])
+        self.act_vars['return_rate'].trace('w', self._trigger_render)
+
         self.socket_manager = SocketManager()
 
     def set_vars_default(self):
         self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['rate'].set(self.default_act_vars['rate'])
+        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
+        self.act_vars['increase'].set(self.default_act_vars['increase'])
         self.act_vars['years'].set(self.default_act_vars['years'])
+        self.act_vars['balance'].set(self.default_act_vars['balance'])
+        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
 
     def switch_frame(self, frame_class):
         if frame_class is OutlookFrame:
@@ -68,7 +85,7 @@ class RootWindow(tk.Tk):
         save_dict = {'path': path,
                      'action': 'save',
                      'info': self.get_outlook()}
-        response = self.socket_manager.send_over_socket(save_dict)
+        self.socket_manager.send_over_socket(save_dict)
 
     def load_outlook(self, path):
         load_dict = {'path': path,
@@ -78,15 +95,21 @@ class RootWindow(tk.Tk):
 
         self.default_act_vars = response['info']
         self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['rate'].set(self.default_act_vars['rate'])
+        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
+        self.act_vars['increase'].set(self.default_act_vars['increase'])
         self.act_vars['years'].set(self.default_act_vars['years'])
+        self.act_vars['balance'].set(self.default_act_vars['balance'])
+        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
 
         self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
         return {'salary': self.act_vars['salary'].get(),
-                'rate': self.act_vars['rate'].get(),
-                'years': self.act_vars['years'].get()}
+                'contribution': self.act_vars['contribution'].get(),
+                'increase': self.act_vars['increase'].get(),
+                'years': self.act_vars['years'].get(),
+                'balance': self.act_vars['balance'].get(),
+                'return_rate': self.act_vars['return_rate'].get()}
 
     def set_outlook(self, load_dict):
         ...
@@ -185,57 +208,83 @@ class StartupFrame(tk.Frame):
 class OutlookFrame(tk.Frame):
     def __init__(self, master, args):
         tk.Frame.__init__(self, master)
+        self.btn_frame = ttk.Frame(self, padding="5 5 5 5")
+        self.act_frame = ttk.Frame(self, padding="5 5 5 5")
         self.graph_frame = ttk.Frame(self)
 
-        print(f"{args}")
-
         self.salary = args['salary']
-        self.rate = args['rate']
+        self.contribution = args['contribution']
+        self.increase = args['increase']
         self.years = args['years']
+        self.balance = args['balance']
+        self.return_rate = args['return_rate']
 
         self.set_up_widgets()
-        # self.render_graph()
         self.set_up_grid()
 
     def set_up_widgets(self):
         self._figure = None
         self._canvas = None
         # set up widgets
-        self._salary_lbl = ttk.Label(self, text='Salary')
-        self._salary_etr = tk.Entry(self, width=10, textvariable=self.salary)
+        self._salary_lbl = ttk.Label(self.act_frame , text='Salary')
+        self._salary_etr = tk.Entry(self.act_frame , width=10, textvariable=self.salary)
         ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
 
-        self._rate_lbl = ttk.Label(self, text='Savings Rate')
-        self._rate_etr = tk.Entry(self, width=10, textvariable=self.rate)
-        ToolTip(self._rate_etr, msg='Savings rate of salary', delay=0.5)
+        self._contribution_lbl = ttk.Label(self.act_frame , text='Contribution Rate')
+        self._contribution_etr = tk.Entry(self.act_frame , width=10, textvariable=self.contribution)
+        ToolTip(self._contribution_etr, msg='Contribution rate of salary', delay=0.5)
 
-        self._years_lbl = ttk.Label(self, text='Years to Retirement')
-        self._years_etr = tk.Entry(self, width=10, textvariable=self.years)
+        self._increase_lbl = ttk.Label(self.act_frame , text='Annual Salary Increase')
+        self._increase_etr = tk.Entry(self.act_frame , width=10, textvariable=self.increase)
+        ToolTip(self._increase_etr, msg='Estimated increase of salary annually', delay=0.5)
+
+        self._years_lbl = ttk.Label(self.act_frame , text='Years to Retirement')
+        self._years_etr = tk.Entry(self.act_frame , width=10, textvariable=self.years)
         ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
 
-        self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=self.master.open_tutorial)
+        self._balance_lbl = ttk.Label(self.act_frame , text='Balance')
+        self._balance_etr = tk.Entry(self.act_frame , width=10, textvariable=self.balance)
+        ToolTip(self._balance_etr, msg='Current balance', delay=0.5)
 
-        self._save_btn = ttk.Button(self, text='Save', command=self.master.open_save)
+        self._return_lbl = ttk.Label(self.act_frame , text='Expected Rate of Return')
+        self._return_etr = tk.Entry(self.act_frame , width=10, textvariable=self.return_rate)
+        ToolTip(self._return_etr, msg='Expected rate of return', delay=0.5)
+
+        self._tutorial_btn = ttk.Button(self.btn_frame , text='Open tutorial', command=self.master.open_tutorial)
+
+        self._save_btn = ttk.Button(self.btn_frame , text='Save', command=self.master.open_save)
         ToolTip(self._save_btn, msg='Opens the save dialog window', delay=0.5)
 
-        self._refresh_btn = ttk.Button(self, text='Refresh', command=self._refresh)
+        self._refresh_btn = ttk.Button(self.btn_frame , text='Refresh', command=self._refresh)
         ToolTip(self._refresh_btn, msg='Resets all fields to their original values', delay=0.5)
 
-        self._back_btn = ttk.Button(self, width=10, text='Back',command=lambda: self.master.switch_frame(StartupFrame))
+        self._back_btn = ttk.Button(self.btn_frame , width=10, text='Back',command=lambda: self.master.switch_frame(StartupFrame))
         ToolTip(self._back_btn, msg='Return to the opening page', delay=0.5)
 
     def set_up_grid(self):
-        self._back_btn.grid(row=0, column=0, sticky='E')
-        self._salary_lbl.grid(row=1, column=0, sticky='E')
-        self._salary_etr.grid(row=1, column=1)
-        self._rate_lbl.grid(row=2, column=0, sticky='E')
-        self._rate_etr.grid(row=2, column=1)
-        self._years_lbl.grid(row=3, column=0, sticky='E')
-        self._years_etr.grid(row=3, column=1)
-        self._tutorial_btn.grid(row=4, column=0)
-        self._save_btn.grid(row=5, column=0)
-        self._refresh_btn.grid(row=5, column=1)
-        self.graph_frame.grid(row=0, column=2, rowspan=5)
+        self._salary_lbl.grid(row=1, column=0, sticky='W')
+        self._salary_etr.grid(row=2, column=0)
+        self._contribution_lbl.grid(row=3, column=0, sticky='W')
+        self._contribution_etr.grid(row=4, column=0)
+        self._increase_lbl.grid(row=5, column=0, sticky='W')
+        self._increase_etr.grid(row=6, column=0)
+        self._years_lbl.grid(row=7, column=0, sticky='W')
+        self._years_etr.grid(row=8, column=0)
+        self._balance_lbl.grid(row=9, column=0, sticky='W')
+        self._balance_etr.grid(row=10, column=0)
+        self._return_lbl.grid(row=11, column=0, sticky='W')
+        self._return_etr.grid(row=12, column=0)
+
+        self._back_btn.grid(row=0, column=0, sticky='NW', pady=10)
+        self._tutorial_btn.grid(row=1, column=0, columnspan=2)
+        self._save_btn.grid(row=2, column=0, padx=2, pady=5)
+        self._refresh_btn.grid(row=2, column=1, padx=2, pady=5)
+
+        self.btn_frame.grid(row=0, column=0)
+        self.act_frame.grid(row=1, column=0)
+        self.act_frame.rowconfigure(0, minsize=100)
+        self.act_frame.rowconfigure(13, minsize=100)
+        self.graph_frame.grid(row=0, column=1, rowspan=2)
 
         # create the widget and stuff
         self._calculate()
@@ -243,31 +292,38 @@ class OutlookFrame(tk.Frame):
         self._figure = Figure(figsize=(5, 5), dpi=100)
         self._figure_sub_plot = self._figure.add_subplot(111)
         self._line1, = self._figure_sub_plot.plot(self._x, self._y, '-r')
-        self._canvas = matplotlib.backends.backend_tkagg.FigureCanvasTkAgg(self._figure, master=self)
+        self._canvas = FigureCanvasTkAgg(self._figure, master=self.graph_frame)
         self._canvas.draw()
-        self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
+        self._canvas.get_tk_widget().grid(row=0, column=0)
 
     def render_graph(self):
-        print('render triggered')
         self._calculate()
         self._line1.set_data(self._x, self._y)
         ax = self._canvas.figure.axes[0]
-        ax.set_xlim(0, self.years.get())
-        ax.set_ylim(0, max(self._y))
+        ax.set_xlim(0, self.years.get()+1)
+        ax.set_ylim(0, max(self._y)*1.1)
         self._canvas.draw()
 
     def _calculate(self):
-        def savings(i):
-            return self.salary.get()*self.rate.get()/100*i
-        self._x = [i for i in range(0, self.years.get()+1)]
-        self._y = [savings(i) for i in self._x]
+        starting_salary = self.salary.get()
+        contribution = self.contribution.get()/100 + 1
+        increase = self.increase.get()/100 + 1
+        years = self.years.get()
+        starting_balance = self.balance.get()
+        return_rate = self.return_rate.get()/100 + 1
+
+        salary_at_year = [starting_salary]
+        balance_at_year = [starting_balance]
+        for i in range(years):
+            salary_at_year.append(salary_at_year[i]*increase)
+            balance_at_year.append(balance_at_year[i]*return_rate + salary_at_year[i]*contribution)
+
+        self._x = [i for i in range(years+1)]
+        self._y = balance_at_year
 
     def _refresh(self):
         self.master.set_vars_default()
-        # instead of always setting to default, set to the object loaded or default
-        # self.salary.set(70000.00)
-        # self.rate.set(4.99)
-        # self.years.set(35)
+        self.render_graph()
 
 
 class TutorialWindow(tk.Toplevel):
@@ -361,6 +417,13 @@ class SocketManager():
         return response
 
 
+def _quit():
+    print('quitting app')
+    root.quit()
+    root.destroy()
+
+
 if __name__ == '__main__':
     root = RootWindow()
+    root.protocol('WM_DELETE_WINDOW', _quit)
     root.mainloop()
