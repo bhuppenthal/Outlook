@@ -19,7 +19,7 @@ INIT_VALS = {'salary': 70000,
 ACT = [
     {
         'name': 'salary',
-        'init_value': 70000,
+        'init_val': 70000,
         'type': 'd',
         'text_lbl': 'Salary',
         'text_tip': 'Current yearly salary',
@@ -27,7 +27,7 @@ ACT = [
     },
     {
         'name': 'contribution',
-        'init_value': '10',
+        'init_val': 10,
         'type': 'd',
         'text_lbl': 'Contribution Rate',
         'text_tip': 'Contribution rate of salary',
@@ -35,7 +35,7 @@ ACT = [
     },
     {
         'name': 'increase',
-        'init_value': '2',
+        'init_val': 2,
         'type': 'd',
         'text_lbl': 'Annual Raise',
         'text_tip': 'Estimated rate of salary increase annually',
@@ -43,7 +43,7 @@ ACT = [
     },
     {
         'name': 'years',
-        'init_value': 25,
+        'init_val': 25,
         'type': 'i',
         'text_lbl': 'Years to Retirement',
         'text_tip': 'Estimated number of years to retirement',
@@ -51,7 +51,7 @@ ACT = [
     },
     {
         'name': 'balance',
-        'init_value': '25000',
+        'init_val': 25000,
         'type': 'd',
         'text_lbl': 'Currentl Balance',
         'text_tip': 'Current 401k balance',
@@ -59,7 +59,7 @@ ACT = [
     },
     {
         'name': 'return_rate',
-        'init_value': '6.5',
+        'init_val': 6.5,
         'type': 'd',
         'text_lbl': 'Return Rate',
         'text_tip': 'Expected Rate of Return',
@@ -78,31 +78,25 @@ class RootWindow(tk.Tk):
         self._frame = StartupFrame(self, {})
         self._tutorial_window = None
         self._load_window = None
-
         self._frame.grid(row=0, column=0)
 
     def set_up_variables(self):
-        def get_tk_var(self, char):
-            if char == 'i':
-                return tk.IntVar(master=self)
+        def tk_var(self, vtype, init):
+            if vtype == 'i':
+                var = tk.IntVar(master=self)
             else:
-                return tk.DoubleVar(master=self)
+                var = tk.DoubleVar(master=self)
+            var.set(init)
+            var.trace('w', self._trigger_render)
+            return var
 
-        self.act_vars = {var['name']: get_tk_var(self, var['type']) for var in ACT}
-
+        self.tk_vars = {var['name']: tk_var(self, var['type'], var['init_val']) for var in ACT}
+        self.default_vals = {var['name']: var['init_val'] for var in ACT}
         self.socket_manager = SocketManager()
-
-    def set_vars_default(self):
-        self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
-        self.act_vars['increase'].set(self.default_act_vars['increase'])
-        self.act_vars['years'].set(self.default_act_vars['years'])
-        self.act_vars['balance'].set(self.default_act_vars['balance'])
-        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
 
     def switch_frame(self, frame_class):
         if frame_class is OutlookFrame:
-            new_frame = frame_class(self, self.act_vars)
+            new_frame = frame_class(self, self.tk_vars)
         else:
             new_frame = frame_class(self, [])
         self._frame.destroy()
@@ -129,33 +123,14 @@ class RootWindow(tk.Tk):
                      'action': 'load',
                      'info': None}
         response = self.socket_manager.send_over_socket(load_dict)
-
-        self.default_act_vars = response['info']
-        self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
-        self.act_vars['increase'].set(self.default_act_vars['increase'])
-        self.act_vars['years'].set(self.default_act_vars['years'])
-        self.act_vars['balance'].set(self.default_act_vars['balance'])
-        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
-
+        self.default_vals = {k: v for k, v in response['info'].items()}
         self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
-        return {'salary': self.act_vars['salary'].get(),
-                'contribution': self.act_vars['contribution'].get(),
-                'increase': self.act_vars['increase'].get(),
-                'years': self.act_vars['years'].get(),
-                'balance': self.act_vars['balance'].get(),
-                'return_rate': self.act_vars['return_rate'].get()}
-
-    def set_outlook(self, load_dict):
-        ...
+        return {k: v.get() for k, v in self.tk_vars}
 
     def _trigger_render(self, *args):
         self._frame.render_graph()
-
-    def _debug_trace(self, *args):
-        print(f"salary: {self.salary.get()},rate: {self.rate.get()}, years: {self.years.get()}")
 
 
 class SaveWindow(tk.Toplevel):
