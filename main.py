@@ -10,8 +10,11 @@ import json
 import socket
 
 INIT_VALS = {'salary': 70000,
-             'rate': 4.99,
-             'years': 35}
+             'contribution': 10,
+             'increase': 3,
+             'years': 35,
+             'balance': 20000,
+             'return_rate': 6.5}
 
 
 class RootWindow(tk.Tk):
@@ -29,22 +32,35 @@ class RootWindow(tk.Tk):
 
     def set_up_variables(self):
         self.default_act_vars = INIT_VALS
-        
+
         self.act_vars = {'salary': tk.DoubleVar(master=self),
-                         'rate': tk.DoubleVar(master=self),
-                         'years': tk.IntVar(master=self)}
+                         'contribution': tk.DoubleVar(master=self),
+                         'increase': tk.DoubleVar(master=self),
+                         'years': tk.IntVar(master=self),
+                         'balance': tk.DoubleVar(master=self),
+                         'return_rate': tk.DoubleVar(master=self)}
         self.act_vars['salary'].set(INIT_VALS['salary'])
         self.act_vars['salary'].trace('w', self._trigger_render)
-        self.act_vars['rate'].set(INIT_VALS['rate'])
-        self.act_vars['rate'].trace('w', self._trigger_render)
+        self.act_vars['contribution'].set(INIT_VALS['contribution'])
+        self.act_vars['contribution'].trace('w', self._trigger_render)
+        self.act_vars['increase'].set(INIT_VALS['increase'])
+        self.act_vars['increase'].trace('w', self._trigger_render)
         self.act_vars['years'].set(INIT_VALS['years'])
         self.act_vars['years'].trace('w', self._trigger_render)
+        self.act_vars['balance'].set(INIT_VALS['balance'])
+        self.act_vars['balance'].trace('w', self._trigger_render)
+        self.act_vars['return_rate'].set(INIT_VALS['return_rate'])
+        self.act_vars['return_rate'].trace('w', self._trigger_render)
+
         self.socket_manager = SocketManager()
 
     def set_vars_default(self):
         self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['rate'].set(self.default_act_vars['rate'])
+        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
+        self.act_vars['increase'].set(self.default_act_vars['increase'])
         self.act_vars['years'].set(self.default_act_vars['years'])
+        self.act_vars['balance'].set(self.default_act_vars['balance'])
+        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
 
     def switch_frame(self, frame_class):
         if frame_class is OutlookFrame:
@@ -68,7 +84,7 @@ class RootWindow(tk.Tk):
         save_dict = {'path': path,
                      'action': 'save',
                      'info': self.get_outlook()}
-        response = self.socket_manager.send_over_socket(save_dict)
+        self.socket_manager.send_over_socket(save_dict)
 
     def load_outlook(self, path):
         load_dict = {'path': path,
@@ -78,15 +94,21 @@ class RootWindow(tk.Tk):
 
         self.default_act_vars = response['info']
         self.act_vars['salary'].set(self.default_act_vars['salary'])
-        self.act_vars['rate'].set(self.default_act_vars['rate'])
+        self.act_vars['contribution'].set(self.default_act_vars['contribution'])
+        self.act_vars['increase'].set(self.default_act_vars['increase'])
         self.act_vars['years'].set(self.default_act_vars['years'])
+        self.act_vars['balance'].set(self.default_act_vars['balance'])
+        self.act_vars['return_rate'].set(self.default_act_vars['return_rate'])
 
         self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
         return {'salary': self.act_vars['salary'].get(),
-                'rate': self.act_vars['rate'].get(),
-                'years': self.act_vars['years'].get()}
+                'contribution': self.act_vars['contribution'].get(),
+                'increase': self.act_vars['increase'].get(),
+                'years': self.act_vars['years'].get(),
+                'balance': self.act_vars['balance'].get(),
+                'return_rate': self.act_vars['return_rate'].get()}
 
     def set_outlook(self, load_dict):
         ...
@@ -190,11 +212,13 @@ class OutlookFrame(tk.Frame):
         print(f"{args}")
 
         self.salary = args['salary']
-        self.rate = args['rate']
+        self.contribution = args['contribution']
+        self.increase = args['increase']
         self.years = args['years']
+        self.balance = args['balance']
+        self.return_rate = args['return_rate']
 
         self.set_up_widgets()
-        # self.render_graph()
         self.set_up_grid()
 
     def set_up_widgets(self):
@@ -205,13 +229,25 @@ class OutlookFrame(tk.Frame):
         self._salary_etr = tk.Entry(self, width=10, textvariable=self.salary)
         ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
 
-        self._rate_lbl = ttk.Label(self, text='Savings Rate')
-        self._rate_etr = tk.Entry(self, width=10, textvariable=self.rate)
-        ToolTip(self._rate_etr, msg='Savings rate of salary', delay=0.5)
+        self._contribution_lbl = ttk.Label(self, text='Contribution Rate')
+        self._contribution_etr = tk.Entry(self, width=10, textvariable=self.contribution)
+        ToolTip(self._contribution_etr, msg='Contribution rate of salary', delay=0.5)
+
+        self._increase_lbl = ttk.Label(self, text='Annual Salary Increase')
+        self._increase_etr = tk.Entry(self, width=10, textvariable=self.increase)
+        ToolTip(self._increase_etr, msg='Estimated increase of salary annually', delay=0.5)
 
         self._years_lbl = ttk.Label(self, text='Years to Retirement')
         self._years_etr = tk.Entry(self, width=10, textvariable=self.years)
         ToolTip(self._years_etr, msg='Estimated number of years', delay=0.5)
+
+        self._balance_lbl = ttk.Label(self, text='Balance')
+        self._balance_etr = tk.Entry(self, width=10, textvariable=self.balance)
+        ToolTip(self._balance_etr, msg='Current balance', delay=0.5)
+
+        self._return_lbl = ttk.Label(self, text='Expected Rate of Return')
+        self._return_etr = tk.Entry(self, width=10, textvariable=self.return_rate)
+        ToolTip(self._return_etr, msg='Expected rate of return', delay=0.5)
 
         self._tutorial_btn = ttk.Button(self, text='Open tutorial', command=self.master.open_tutorial)
 
@@ -228,14 +264,20 @@ class OutlookFrame(tk.Frame):
         self._back_btn.grid(row=0, column=0, sticky='E')
         self._salary_lbl.grid(row=1, column=0, sticky='E')
         self._salary_etr.grid(row=1, column=1)
-        self._rate_lbl.grid(row=2, column=0, sticky='E')
-        self._rate_etr.grid(row=2, column=1)
-        self._years_lbl.grid(row=3, column=0, sticky='E')
-        self._years_etr.grid(row=3, column=1)
-        self._tutorial_btn.grid(row=4, column=0)
-        self._save_btn.grid(row=5, column=0)
-        self._refresh_btn.grid(row=5, column=1)
-        self.graph_frame.grid(row=0, column=2, rowspan=5)
+        self._contribution_lbl.grid(row=2, column=0, sticky='E')
+        self._contribution_etr.grid(row=2, column=1)
+        self._increase_lbl.grid(row=3,column=0,sticky='E')
+        self._increase_etr.grid(row=3,column=1,sticky='E')
+        self._years_lbl.grid(row=4, column=0, sticky='E')
+        self._years_etr.grid(row=4, column=1)
+        self._balance_lbl.grid(row=5,column=0,sticky='E')
+        self._balance_etr.grid(row=5,column=1,sticky='E')
+        self._return_lbl.grid(row=6,column=0,sticky='E')
+        self._return_etr.grid(row=6,column=1,sticky='E')
+        self._tutorial_btn.grid(row=7, column=0)
+        self._save_btn.grid(row=8, column=0)
+        self._refresh_btn.grid(row=8, column=1)
+        self.graph_frame.grid(row=0, column=2, rowspan=8)
 
         # create the widget and stuff
         self._calculate()
@@ -248,7 +290,6 @@ class OutlookFrame(tk.Frame):
         self._canvas.get_tk_widget().grid(row=0, column=2, rowspan=5)
 
     def render_graph(self):
-        print('render triggered')
         self._calculate()
         self._line1.set_data(self._x, self._y)
         ax = self._canvas.figure.axes[0]
@@ -257,17 +298,24 @@ class OutlookFrame(tk.Frame):
         self._canvas.draw()
 
     def _calculate(self):
-        def savings(i):
-            return self.salary.get()*self.rate.get()/100*i
-        self._x = [i for i in range(0, self.years.get()+1)]
-        self._y = [savings(i) for i in self._x]
+        starting_salary = self.salary.get()
+        contribution = self.contribution.get()/100 + 1
+        increase = self.increase.get()/100 + 1
+        years = self.years.get()
+        starting_balance = self.balance.get()
+        return_rate = self.return_rate.get()/100 + 1
+
+        salary_at_year = [starting_salary]
+        balance_at_year = [starting_balance]
+        for i in range(years):
+            salary_at_year.append(salary_at_year[i]*increase)
+            balance_at_year.append(balance_at_year[i]*return_rate + salary_at_year[i]*contribution)
+
+        self._x = [i for i in range(years+1)]
+        self._y = balance_at_year
 
     def _refresh(self):
         self.master.set_vars_default()
-        # instead of always setting to default, set to the object loaded or default
-        # self.salary.set(70000.00)
-        # self.rate.set(4.99)
-        # self.years.set(35)
 
 
 class TutorialWindow(tk.Toplevel):
