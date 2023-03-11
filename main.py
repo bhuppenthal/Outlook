@@ -242,10 +242,6 @@ class OutlookFrame(tk.Frame):
         self._canvas = None
         self._act_widgets = [new_widgets(self, act_dict) for act_dict in ACT]
 
-        # self._salary_lbl = ttk.Label(self.act_frame , text='Salary')
-        # self._salary_etr = tk.Entry(self.act_frame , width=10, textvariable=self.salary)
-        # ToolTip(self._salary_etr, msg='Yearly salary', delay=0.5)
-
         self._tutorial_btn = ttk.Button(self.btn_frame,
                                         text='Open tutorial',
                                         command=self.master.open_tutorial)
@@ -270,24 +266,20 @@ class OutlookFrame(tk.Frame):
                 msg='Return to the opening page', delay=0.5)
 
     def set_up_grid(self):
-        # next we need to loop through self._act_widgets and grid them to specification
         for i in range(0, len(self._act_widgets)):
             widgets = self._act_widgets[i]
             widgets['label'].grid(row=2*i, column=0, sticky='W')
             widgets['entry'].grid(row=2*i+1, column=0)
 
-        self._back_btn.grid(row=0, column=0, sticky='NW', pady=10)
+        self._back_btn.grid(row=0, column=0, sticky='NW')
         self._tutorial_btn.grid(row=1, column=0, columnspan=2)
         self._save_btn.grid(row=2, column=0, padx=2, pady=5)
         self._refresh_btn.grid(row=2, column=1, padx=2, pady=5)
 
         self.btn_frame.grid(row=0, column=0)
         self.act_frame.grid(row=1, column=0)
-        self.act_frame.rowconfigure(0, minsize=100)
-        self.act_frame.rowconfigure(13, minsize=100)
         self.graph_frame.grid(row=0, column=1, rowspan=2)
 
-        # create the widget and stuff
         self._calculate()
         self._canvas = pltlib.figure(1)
         self._figure = Figure(figsize=(5, 5), dpi=100)
