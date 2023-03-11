@@ -124,13 +124,19 @@ class RootWindow(tk.Tk):
                      'info': None}
         response = self.socket_manager.send_over_socket(load_dict)
         self.default_vals = {k: v for k, v in response['info'].items()}
+        self.set_vars_default()
         self.switch_frame(OutlookFrame)
 
     def get_outlook(self):
-        return {k: v.get() for k, v in self.tk_vars}
+        return {k: v.get() for k, v in self.tk_vars.items()}
 
     def _trigger_render(self, *args):
         self._frame.render_graph()
+
+    def set_vars_default(self):
+        # for every variable in tk_vars, set to value in self.default_vals
+        for key in self.tk_vars:
+            self.tk_vars[key].set(self.default_vals[key])
 
 
 class SaveWindow(tk.Toplevel):
