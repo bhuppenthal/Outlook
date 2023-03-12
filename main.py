@@ -104,7 +104,7 @@ class SaveWindow(tk.Toplevel):
 
     def set_up_variables(self):
         self._path = tk.StringVar()
-        self._path.set('/home/brenda/python_projects/cs361-outlook/')
+        self._path.set('/home/brenda/python_projects/outlook/')
 
     def set_up_widgets(self):
         self._warn_lbl = tk.Label(self._mainframe, text='Warning! This will overwrite data at the path you specify.')
@@ -139,7 +139,7 @@ class LoadWindow(tk.Toplevel):
 
     def set_up_variables(self):
         self._path = tk.StringVar()
-        self._path.set('/home/brenda/python_projects/cs361-outlook/')
+        self._path.set('/home/brenda/python_projects/outlook/')
 
     def set_up_widgets(self):
         self._path_etr = tk.Entry(self._mainframe, width=55, textvariable=self._path)
@@ -232,7 +232,7 @@ class OutlookFrame(tk.Frame):
         self._tutorial_btn = ttk.Button(self.btn_frame,
                                         text='Open tutorial',
                                         command=self.master.open_tutorial)
-        
+  
         self._save_btn = ttk.Button(self.btn_frame,
                                     text='Save',
                                     command=self.master.open_save)
@@ -292,6 +292,7 @@ class OutlookFrame(tk.Frame):
         self._canvas.draw()
 
     def _calculate(self):
+        """401 calculation."""
         starting_salary = self.tk_vars['salary'].get()
         contribution = self.tk_vars['contribution'].get()/100
         increase = self.tk_vars['increase'].get()/100 + 1
@@ -382,7 +383,6 @@ class SocketManager():
         self.PORT = 54290
 
     def send_over_socket(self, data):
-        print(f"socket manager is sending: {data}")
         data_json = json.dumps(data)
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -393,8 +393,6 @@ class SocketManager():
             response = response.decode("utf=8")
             response = json.loads(response)
 
-        print(f"socket manager received: {response}")
-        print(f"type is {type(response)}")
         return response
 
 
